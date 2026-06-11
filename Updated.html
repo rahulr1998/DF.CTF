@@ -1,0 +1,2399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Falcon – DFIR Investigation Platform | DFIR-2026-007</title>
+<style>
+/* ==========================================================================
+   CSS VARIABLES & THEME (Dark Mode Only)
+   ========================================================================== */
+:root {
+    --bg-main: #0d1117;
+    --bg-panel: #161b22;
+    --bg-input: #010409;
+    --bg-hover: #21262d;
+    --border-color: #30363d;
+    --text-main: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --accent-hover: #1f6feb;
+    --success: #3fb950;
+    --warning: #d29922;
+    --danger: #f85149;
+    --danger-hover: #da3633;
+    --sidebar-width: 260px;
+    --header-height: 70px;
+    --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    --font-mono: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+    --border-radius: 6px;
+    --transition: all 0.2s ease-in-out;
+}
+
+/* ==========================================================================
+   RESET & BASE STYLES
+   ========================================================================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    font-family: var(--font-main);
+    font-size: 14px;
+    line-height: 1.5;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin-bottom: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* ==========================================================================
+   LOGIN / REGISTRATION SCREEN
+   ========================================================================== */
+#login-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--bg-main);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    overflow-y: auto;
+    padding: 40px;
+}
+
+.login-container {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 40px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.login-header h1 {
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+    font-size: 24px;
+}
+
+.login-header p {
+    color: var(--text-muted);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.team-member-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.team-member-row input {
+    flex: 1;
+}
+
+.btn-remove {
+    background-color: transparent;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    padding: 0 10px;
+    cursor: pointer;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+}
+
+.btn-remove:hover {
+    background-color: rgba(248, 81, 73, 0.1);
+}
+
+/* ==========================================================================
+   LAYOUT & RESPONSIVE DESIGN
+   ========================================================================== */
+#app-container {
+    display: none; /* Hidden until login */
+    width: 100vw;
+    height: 100vh;
+    flex-direction: row;
+}
+
+/* SIDEBAR */
+#sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--bg-panel);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    flex-shrink: 0;
+}
+
+#sidebar-header {
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: bold;
+    font-size: 18px;
+    letter-spacing: 1px;
+    color: var(--accent);
+    text-transform: uppercase;
+}
+
+#sidebar-header svg {
+    margin-right: 10px;
+    fill: var(--accent);
+}
+
+#nav-menu {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px 0;
+}
+
+.nav-section-title {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    padding: 10px 20px 5px 20px;
+    letter-spacing: 0.5px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: var(--transition);
+    border-left: 3px solid transparent;
+}
+
+.nav-item:hover {
+    background-color: var(--bg-hover);
+}
+
+.nav-item.active {
+    background-color: var(--bg-hover);
+    border-left-color: var(--accent);
+    font-weight: 500;
+}
+
+.nav-item .icon {
+    margin-right: 12px;
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+}
+
+.nav-item .badge {
+    margin-left: auto;
+    background-color: var(--border-color);
+    color: var(--text-muted);
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+.nav-item.completed .badge {
+    background-color: var(--success);
+    color: #fff;
+}
+
+/* MAIN CONTENT AREA */
+#main-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* TOP DASHBOARD / HEADER */
+#top-header {
+    min-height: var(--header-height);
+    height: auto;
+    background-color: var(--bg-panel);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    z-index: 90;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.top-user-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-right: 20px;
+    border-right: 1px solid var(--border-color);
+    margin-right: 20px;
+}
+
+.top-user-info .user-primary {
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 14px;
+}
+
+.top-user-info .user-secondary {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.dashboard-stats {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.stat-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background-color: var(--bg-main);
+    border: 1px solid var(--border-color);
+    padding: 5px 15px;
+    border-radius: var(--border-radius);
+    min-width: 100px;
+}
+
+.stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+.stat-value {
+    font-size: 16px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+}
+
+.stat-value.success { color: var(--success); }
+.stat-value.warning { color: var(--warning); }
+.stat-value.danger { color: var(--danger); }
+
+.integrity-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: var(--border-radius);
+    background-color: rgba(63, 185, 80, 0.1);
+    border: 1px solid var(--success);
+    color: var(--success);
+    font-weight: 500;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.integrity-indicator.warning {
+    background-color: rgba(210, 153, 34, 0.1);
+    border-color: var(--warning);
+    color: var(--warning);
+}
+
+.integrity-indicator.danger {
+    background-color: rgba(248, 81, 73, 0.1);
+    border-color: var(--danger);
+    color: var(--danger);
+    animation: pulse 2s infinite;
+}
+
+.integrity-indicator.disabled {
+    background-color: rgba(139, 148, 158, 0.1);
+    border-color: var(--text-muted);
+    color: var(--text-muted);
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(248, 81, 73, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(248, 81, 73, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(248, 81, 73, 0); }
+}
+
+@media (max-width: 1200px) {
+    #top-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .top-user-info {
+        border-right: none;
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+}
+
+/* CONTENT CONTAINER */
+#content-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px 40px;
+    position: relative;
+}
+
+.view-section {
+    display: none;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding-bottom: 50px;
+}
+
+.view-section.active {
+    display: block;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   UI COMPONENTS
+   ========================================================================== */
+.card {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.card-header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    white-space: nowrap;
+    vertical-align: middle;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--bg-hover);
+    color: var(--text-main);
+    transition: var(--transition);
+    font-family: var(--font-main);
+}
+
+.btn:hover:not(:disabled) {
+    background-color: #30363d;
+    border-color: #8b949e;
+}
+
+.btn-primary {
+    color: #ffffff;
+    background-color: var(--success);
+    border-color: rgba(240, 246, 252, 0.1);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: #2ea043;
+    border-color: rgba(240, 246, 252, 0.1);
+}
+
+.btn-danger {
+    color: #ffffff;
+    background-color: var(--danger);
+    border-color: rgba(240, 246, 252, 0.1);
+}
+
+.btn-danger:hover:not(:disabled) {
+    background-color: var(--danger-hover);
+}
+
+.btn-accent {
+    color: #ffffff;
+    background-color: var(--accent-hover);
+    border-color: rgba(240, 246, 252, 0.1);
+}
+
+.btn-accent:hover:not(:disabled) {
+    background-color: #318bf8;
+}
+
+.btn-full {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.input-group label .required {
+    color: var(--danger);
+}
+
+input[type="text"], 
+input[type="number"], 
+input[type="password"],
+textarea,
+select {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--text-main);
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    outline: none;
+    font-family: var(--font-mono);
+    transition: border-color 0.2s;
+}
+
+input:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    font-size: 13px;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+th {
+    background-color: var(--bg-hover);
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+tr:hover td {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.badge {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 20px;
+}
+
+.badge-outline {
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+}
+
+/* ==========================================================================
+   SPECIFIC VIEW STYLES
+   ========================================================================== */
+
+/* Case Brief */
+.brief-metadata {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.metadata-item {
+    background: var(--bg-input);
+    padding: 12px;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.metadata-label {
+    color: var(--text-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.metadata-value {
+    font-family: var(--font-mono);
+    font-weight: bold;
+    margin-top: 4px;
+    color: var(--accent);
+    word-break: break-word;
+}
+
+.brief-content p {
+    margin-bottom: 15px;
+    color: #c9d1d9;
+}
+
+.brief-content ul {
+    margin-left: 20px;
+    margin-bottom: 15px;
+    color: #c9d1d9;
+}
+
+.brief-content li {
+    margin-bottom: 5px;
+}
+
+/* Evidence Locker */
+.evidence-banner {
+    background: rgba(88, 166, 255, 0.1);
+    border-left: 3px solid var(--accent);
+    padding: 15px 20px;
+    margin-bottom: 25px;
+    border-radius: var(--border-radius);
+}
+
+.evidence-banner h3 {
+    color: var(--accent);
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.evidence-banner p {
+    margin-bottom: 5px;
+    color: var(--text-main);
+}
+
+.evidence-banner p:last-child {
+    margin-bottom: 0;
+}
+
+.evidence-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.evidence-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.evidence-card.primary-evidence {
+    border-color: var(--accent);
+    box-shadow: 0 0 15px rgba(88, 166, 255, 0.1);
+}
+
+.evidence-icon {
+    font-size: 32px;
+    color: var(--accent);
+    margin-bottom: 0;
+}
+
+.evidence-name {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 5px;
+    color: #fff;
+}
+
+.evidence-desc {
+    color: var(--text-main);
+    font-size: 13px;
+    margin-bottom: 15px;
+    flex-grow: 1;
+}
+
+.evidence-meta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--bg-input);
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    word-break: break-word;
+}
+
+.evidence-meta strong {
+    color: var(--text-main);
+    font-family: var(--font-main);
+    font-size: 12px;
+}
+
+.tools-list {
+    margin-left: 20px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    color: var(--text-muted);
+}
+
+.tools-list:last-child {
+    margin-bottom: 0;
+}
+
+/* Questions / Phases */
+.question-block {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.question-block.correct {
+    border-left-color: var(--success);
+}
+
+.question-block.correct .question-header {
+    color: var(--success);
+}
+
+.question-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.question-text {
+    font-size: 15px;
+    margin-bottom: 15px;
+}
+
+.hint-engine {
+    margin-top: 15px;
+    border-top: 1px dashed var(--border-color);
+    padding-top: 15px;
+}
+
+.hint-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.hint-btn {
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.hint-btn:hover {
+    border-color: var(--warning);
+    color: var(--warning);
+}
+
+.hint-btn.revealed {
+    background: rgba(210, 153, 34, 0.1);
+    border-color: var(--warning);
+    color: var(--warning);
+    cursor: default;
+}
+
+.hint-text {
+    font-size: 13px;
+    color: var(--warning);
+    background: rgba(210, 153, 34, 0.05);
+    padding: 10px;
+    border-radius: 4px;
+    border-left: 2px solid var(--warning);
+    margin-bottom: 5px;
+    display: none;
+}
+
+.hint-text.active {
+    display: block;
+    animation: fadeIn 0.3s;
+}
+
+.answer-wrapper {
+    display: flex;
+    gap: 10px;
+}
+
+.answer-wrapper input, .answer-wrapper select {
+    flex-grow: 1;
+}
+
+.status-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.status-icon.correct {
+    background: rgba(63, 185, 80, 0.1);
+    border-color: var(--success);
+    color: var(--success);
+}
+
+/* Timeline */
+.timeline-container {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 40px;
+    width: 2px;
+    background: var(--border-color);
+}
+
+.timeline-event {
+    position: relative;
+    margin-bottom: 20px;
+    padding-left: 80px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 35px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg-main);
+}
+
+.timeline-content {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 15px;
+}
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.timeline-desc {
+    color: var(--text-main);
+}
+
+.timeline-artifact {
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(88, 166, 255, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.delete-event {
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+/* Notifications */
+#notification-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.notification {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--accent);
+    padding: 15px 20px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 300px;
+    animation: slideInRight 0.3s forwards;
+}
+
+.notification.warning { border-left-color: var(--warning); }
+.notification.danger { border-left-color: var(--danger); }
+.notification.success { border-left-color: var(--success); }
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* Modals */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.8);
+    z-index: 1000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    width: 400px;
+    max-width: 90%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+
+.modal-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Print Styles */
+@media print {
+    body * { visibility: hidden; }
+    #report-content, #report-content * { visibility: visible; }
+    #report-content { position: absolute; left: 0; top: 0; width: 100%; }
+    .btn, #sidebar, #top-header { display: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+    <div class="login-container">
+        <div class="login-header">
+            <h1>PROJECT FALCON</h1>
+            <p>Digital Forensics Investigation Platform</p>
+            <h3 style="margin-top: 20px; color: var(--text-main);">Student Registration Form</h3>
+        </div>
+        
+        <div id="login-error" style="color: var(--danger); margin-bottom: 15px; font-weight: 500; display: none;">
+            Please fill out all required fields.
+        </div>
+
+        <div class="input-group">
+            <label>Investigator Name <span class="required">*</span></label>
+            <input type="text" id="reg-name" placeholder="Primary Investigator Name">
+        </div>
+        
+        <div class="input-group">
+            <label>Team Name <span class="required">*</span></label>
+            <input type="text" id="reg-team" placeholder="e.g. Blue Team Alpha">
+        </div>
+        
+        <div class="input-group">
+            <label>Department <span class="required">*</span></label>
+            <input type="text" id="reg-dept" placeholder="e.g. Cyber Security">
+        </div>
+
+        <div class="input-group">
+            <label>Roll Number / Student ID (Optional)</label>
+            <input type="text" id="reg-roll" placeholder="Optional">
+        </div>
+
+        <div class="input-group" style="margin-top: 25px;">
+            <label style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Team Members</span>
+                <button class="btn btn-accent" style="padding: 2px 8px; font-size: 11px;" onclick="LoginEngine.addTeamMember()">+ Add Member</button>
+            </label>
+            <div id="team-members-container">
+                </div>
+        </div>
+
+        <button class="btn btn-primary btn-full" style="margin-top: 30px;" onclick="LoginEngine.startInvestigation()">START INVESTIGATION</button>
+    </div>
+</div>
+
+<div id="app-container">
+    
+    <aside id="sidebar">
+        <div id="sidebar-header">
+            <span>🦅 FALCON DFIR</span>
+        </div>
+        <div id="nav-menu">
+            <div class="nav-section-title">Case Information</div>
+            <div class="nav-item active" data-target="case-brief">
+                <span class="icon">📋</span> Case Brief
+            </div>
+            <div class="nav-item" data-target="evidence-locker">
+                <span class="icon">📁</span> Evidence Locker
+            </div>
+            
+            <div class="nav-section-title">Investigation Phases</div>
+            <div class="nav-item" data-target="phase-1" id="nav-p1">
+                <span class="icon">🔍</span> 1. Acquisition <span class="badge" id="badge-p1">0/0</span>
+            </div>
+            <div class="nav-item" data-target="phase-2" id="nav-p2">
+                <span class="icon">💾</span> 2. File System <span class="badge" id="badge-p2">0/0</span>
+            </div>
+            <div class="nav-item" data-target="phase-3" id="nav-p3">
+                <span class="icon">🌐</span> 3. Browser Analysis <span class="badge" id="badge-p3">0/0</span>
+            </div>
+            <div class="nav-item" data-target="phase-4" id="nav-p4">
+                <span class="icon">🔌</span> 4. Registry & USB <span class="badge" id="badge-p4">0/0</span>
+            </div>
+            <div class="nav-item" data-target="phase-5" id="nav-p5">
+                <span class="icon">📜</span> 5. Event Logs <span class="badge" id="badge-p5">0/0</span>
+            </div>
+            <div class="nav-item" data-target="phase-6" id="nav-p6">
+                <span class="icon">⏱</span> 6. Timeline Recon <span class="badge" id="badge-p6">0/0</span>
+            </div>
+            
+            <div class="nav-section-title">Reporting</div>
+            <div class="nav-item" data-target="timeline-builder">
+                <span class="icon">📅</span> Timeline Builder
+            </div>
+            <div class="nav-item" data-target="investigator-notes">
+                <span class="icon">📝</span> Investigator Notes
+            </div>
+            <div class="nav-item" data-target="final-report">
+                <span class="icon">📄</span> Final Report
+            </div>
+            <div class="nav-item" data-target="submit-investigation" style="color: var(--accent); margin-top: 10px;">
+                <span class="icon">🚀</span> Submit Investigation
+            </div>
+
+            <div class="nav-section-title" style="margin-top: 20px;">Admin</div>
+            <div class="nav-item" id="instructor-login-btn">
+                <span class="icon">🔐</span> Instructor Mode
+            </div>
+        </div>
+    </aside>
+
+    <main id="main-area">
+        
+        <header id="top-header">
+            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div class="top-user-info" id="top-user-display">
+                    <span class="user-primary">Investigator: <span id="top-inv-name"></span></span>
+                    <span class="user-secondary">Team: <span id="top-inv-team"></span> | Dept: <span id="top-inv-dept"></span></span>
+                </div>
+                
+                <div class="dashboard-stats">
+                    <div class="stat-box">
+                        <span class="stat-label">Case ID</span>
+                        <span class="stat-value" style="color:var(--accent)">DFIR-2026-007</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Progress</span>
+                        <span class="stat-value" id="top-progress">0%</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Score</span>
+                        <span class="stat-value" id="top-score">0 / 100</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Penalties</span>
+                        <span class="stat-value danger" id="top-penalties">-0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="dashboard-stats">
+                <div class="stat-box" id="session-mode-indicator" style="display:none; background-color: rgba(210, 153, 34, 0.1); border-color: var(--warning);">
+                    <span class="stat-label" style="color: var(--warning);">Session Mode</span>
+                    <span class="stat-value" style="color: var(--warning);">Training Mode</span>
+                </div>
+                <div class="integrity-indicator" id="integrity-status-ui">
+                    <span>🛡️ Integrity: SECURE</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Time Elapsed</span>
+                    <span class="stat-value" id="timer-display">00:00:00</span>
+                </div>
+                <button class="btn btn-danger" style="padding: 8px 15px;" onclick="SessionEngine.confirmReset()">Reset Session</button>
+            </div>
+        </header>
+
+        <div id="content-container">
+            
+            <section id="case-brief" class="view-section active">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Case Brief: Project Falcon – Insider Threat</h2>
+                    </div>
+                    <div class="brief-metadata">
+                        <div class="metadata-item">
+                            <div class="metadata-label">Case ID</div>
+                            <div class="metadata-value">DFIR-2026-007</div>
+                        </div>
+                        <div class="metadata-item">
+                            <div class="metadata-label">Organization</div>
+                            <div class="metadata-value">ABC Technologies</div>
+                        </div>
+                        <div class="metadata-item">
+                            <div class="metadata-label">Investigator Name</div>
+                            <div class="metadata-value" id="brief-inv-name"></div>
+                        </div>
+                        <div class="metadata-item">
+                            <div class="metadata-label">Team Name</div>
+                            <div class="metadata-value" id="brief-inv-team"></div>
+                        </div>
+                        <div class="metadata-item">
+                            <div class="metadata-label">Department</div>
+                            <div class="metadata-value" id="brief-inv-dept"></div>
+                        </div>
+                        <div class="metadata-item">
+                            <div class="metadata-label">Team Members</div>
+                            <div class="metadata-value" id="brief-inv-members" style="font-size: 11px; font-weight: normal; color: var(--text-main);"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="brief-content">
+                        <h3>Background</h3>
+                        <p>ABC Technologies suspects that a recently resigned employee, working on the highly confidential "Project Falcon", accessed, staged, and possibly exfiltrated proprietary intellectual property before leaving the company.</p>
+                        <p>During a preliminary review conducted by the IT department, investigators identified a project workspace located under C:\Projects containing multiple department folders, including Falcon, Finance, HR, and Archive. Management believes that files associated with the Falcon project may contain confidential business information relevant to the investigation.</p>
+                        
+                        <h3>Scenario Details</h3>
+                        <p>Management observed unusual off-hours file access, cleared browser history, and unauthorized USB mass storage device usage on the employee's workstation (WIN-FALCON01).</p>
+                        
+                        <h3>Objectives & Rules of Engagement</h3>
+                        <ul>
+                            <li>Verify the integrity of provided forensic images.</li>
+                            <li>Identify the primary user and suspicious files.</li>
+                            <li>Analyze Registry and Event Logs for USB insertion activity.</li>
+                            <li>Analyze browser artifacts for cloud exfiltration evidence.</li>
+                            <li>Build a chronological timeline of the incident.</li>
+                            <li>Draft a professional Final Report.</li>
+                        </ul>
+                        
+                        <div style="background: rgba(248, 81, 73, 0.1); border-left: 3px solid var(--danger); padding: 15px; margin-top: 20px;">
+                            <strong>⚠️ INTEGRITY WARNING:</strong> This platform is proctored. Navigating away from this tab, minimizing the window, opening Developer Tools, or aggressive copy/pasting will be logged as an Integrity Violation. Four violations will result in automatic submission.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="evidence-locker" class="view-section">
+                <h2>Evidence Locker</h2>
+                
+                <div class="evidence-banner">
+                    <h3>📦 Evidence Distribution Notice — Case DFIR-2026-007</h3>
+                    <p><strong>Disk Image (WIN-FALCON01.E01)</strong> is distributed directly by your instructor. Contact them if you have not received it.</p>
+                    <p><strong>Registry Hives</strong> and <strong>Event Logs</strong> are available for download via OneDrive using the buttons below.</p>
+                    <p>⚠️ Verify all artifact hashes before beginning analysis. Document your download time in your Investigator Notes.</p>
+                    <p>You may use any approved forensic tools: FTK Imager, Autopsy, Registry Explorer, EZ Tools, Event Viewer.</p>
+                </div>
+                
+                <div class="evidence-grid">
+                    <div class="evidence-card primary-evidence">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 15px;">
+                            <div class="evidence-icon">💽</div>
+                            <span class="badge" style="background: var(--accent); color: #fff;">Primary Evidence</span>
+                        </div>
+                        <div class="evidence-name">WIN-FALCON01.E01</div>
+                        <div class="evidence-desc">Primary forensic disk image acquired from the employee workstation. This image serves as the primary evidence source for file system analysis, browser activity investigation, USB artifact analysis, timeline reconstruction, and reporting.</div>
+                        <div class="evidence-meta">
+                            <span style="color: var(--warning); font-weight: bold; display: block; margin-bottom: 10px;">Status: Instructor Provided</span>
+                            <strong>Recommended Tools:</strong>
+                            <ul class="tools-list">
+                                <li>FTK Imager</li>
+                                <li>Autopsy</li>
+                                <li>Arsenal Image Mounter</li>
+                            </ul>
+                        </div>
+                        <button class="btn btn-full" style="margin-top:auto;" onclick="ArtifactEngine.requestInstructorEvidence()">Request From Instructor</button>
+                    </div>
+                    
+                    <div class="evidence-card">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 15px;">
+                            <div class="evidence-icon">🔌</div>
+                            <span class="badge badge-outline">Supporting Evidence</span>
+                        </div>
+                        <div class="evidence-name">Registry_Hives.zip</div>
+                        <div class="evidence-desc">Exported Windows Registry hives provided to support focused registry analysis and USB artifact investigation.</div>
+                        <div class="evidence-meta">
+                            <strong>Contents:</strong>
+                            <ul class="tools-list">
+                                <li>SYSTEM</li><li>SOFTWARE</li><li>SAM</li><li>SECURITY</li><li>NTUSER.DAT</li><li>USRCLASS.DAT</li>
+                            </ul>
+                            <strong>Recommended Tools:</strong>
+                            <ul class="tools-list">
+                                <li>Registry Explorer</li>
+                                <li>RECmd</li>
+                            </ul>
+                        </div>
+                        <button class="btn btn-accent btn-full" id="btn-dl-hives" style="margin-top:auto;" onclick="ArtifactEngine.download('hives', this)">Download Registry Hives</button>
+                    </div>
+                    
+                    <div class="evidence-card">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 15px;">
+                            <div class="evidence-icon">📜</div>
+                            <span class="badge badge-outline">Supporting Evidence</span>
+                        </div>
+                        <div class="evidence-name">Windows_Event_Logs.zip</div>
+                        <div class="evidence-desc">Windows Event Logs collected from the workstation to support user activity reconstruction and timeline analysis.</div>
+                        <div class="evidence-meta">
+                            <strong>Contents:</strong>
+                            <ul class="tools-list">
+                                <li>Security.evtx</li><li>System.evtx</li><li>Application.evtx</li>
+                            </ul>
+                            <strong>Recommended Tools:</strong>
+                            <ul class="tools-list">
+                                <li>Event Viewer</li>
+                                <li>EvtxECmd</li>
+                                <li>Timeline Explorer</li>
+                            </ul>
+                        </div>
+                        <button class="btn btn-accent btn-full" id="btn-dl-logs" style="margin-top:auto;" onclick="ArtifactEngine.download('logs', this)">Download Event Logs</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="phase-1" class="view-section">
+                <h2>Phase 1: Evidence Acquisition</h2>
+                <p style="color:var(--text-muted); margin-bottom:20px;">Verify the integrity of the evidence and establish basic system information.</p>
+                <div id="q-container-1"></div>
+            </section>
+
+            <section id="phase-2" class="view-section">
+                <h2>Phase 2: File System Analysis</h2>
+                <p style="color:var(--text-muted); margin-bottom:20px;">Identify the primary user account and locate suspicious file staging directories.</p>
+                <div id="q-container-2"></div>
+            </section>
+
+            <section id="phase-3" class="view-section">
+                <h2>Phase 3: Browser Analysis</h2>
+                <p style="color:var(--text-muted); margin-bottom:20px;">Analyze web history to determine if data was uploaded to unauthorized cloud storage.</p>
+                <div id="q-container-3"></div>
+            </section>
+
+            <section id="phase-4" class="view-section">
+                <h2>Phase 4: Registry & USB Analysis</h2>
+                <p style="color:var(--text-muted); margin-bottom:20px;">Determine if an unauthorized USB mass storage device was connected to the system.</p>
+                <div id="q-container-4"></div>
+            </section>
+
+            <section id="phase-5" class="view-section">
+                <h2>Phase 5: Event Log Analysis</h2>
+                <p style="color:var(--text-muted); margin-bottom:20px;">Examine Security and System event logs to track user logon activity and service execution.</p>
+                <div id="q-container-5"></div>
+            </section>
+
+            <section id="phase-6" class="view-section">
+                <h2>Phase 6: Timeline Reconstruction (Questions)</h2>
+                <p style="color:var(--text-muted); margin-bottom:20px;">Answer crucial timing questions based on your investigation to establish the sequence of events.</p>
+                <div id="q-container-6"></div>
+            </section>
+
+            <section id="timeline-builder" class="view-section">
+                <h2>Timeline Builder</h2>
+                <p style="color:var(--text-muted); margin-bottom:20px;">Construct a chronological timeline of the incident. This will be included in your final report.</p>
+                
+                <div class="card" style="margin-bottom: 20px;">
+                    <h3 class="card-title" style="color:var(--accent);">How to Build the Timeline</h3>
+                    <p style="margin-bottom:10px; color:var(--text-main);">The timeline should reconstruct the user's activities in chronological order using forensic evidence.</p>
+                    <p style="margin-bottom:5px; color:var(--text-muted);">For each event:</p>
+                    <ul style="margin-left:20px; margin-bottom:15px; color:var(--text-muted);">
+                        <li>Identify the timestamp.</li>
+                        <li>Describe the activity.</li>
+                        <li>Cite the supporting artifact.</li>
+                    </ul>
+                    <div style="background:var(--bg-input); border:1px solid var(--border-color); padding:15px; border-radius:var(--border-radius); font-family:var(--font-mono); font-size:12px; margin-bottom:15px;">
+                        <span style="color:var(--text-muted);">Example:</span><br>
+                        <span style="color:var(--success);">[2026-06-10 14:06:01 IST]</span> User searched for a cloud storage service. <span style="color:var(--accent);">Source: Browser History</span><br>
+                        <span style="color:var(--success);">[2026-06-10 14:10:44 IST]</span> PuTTY downloaded. <span style="color:var(--accent);">Source: Chrome Downloads</span><br>
+                        <span style="color:var(--success);">[2026-06-10 14:53:00 IST]</span> USB device connected. <span style="color:var(--accent);">Source: USBSTOR</span>
+                    </div>
+                    <p style="color:var(--warning); font-size:12px; font-weight:bold;">Students must provide at least five significant events.</p>
+                </div>
+
+                <div class="card">
+                    <div style="display:flex; gap:15px; margin-bottom:15px;">
+                        <div style="flex:1;">
+                            <label>Timestamp (UTC)</label>
+                            <input type="text" id="tl-time" placeholder="YYYY-MM-DD HH:MM:SS">
+                        </div>
+                        <div style="flex:2;">
+                            <label>Event Description</label>
+                            <input type="text" id="tl-desc" placeholder="e.g., User logged into WIN-FALCON01">
+                        </div>
+                        <div style="flex:1;">
+                            <label>Artifact Source</label>
+                            <input type="text" id="tl-artifact" placeholder="e.g., Security.evtx (4624)">
+                        </div>
+                        <div style="display:flex; align-items:flex-end;">
+                            <button class="btn btn-primary" onclick="TimelineEngine.addEvent()">Add Event</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-container" id="timeline-display">
+                    </div>
+            </section>
+
+            <section id="investigator-notes" class="view-section">
+                <h2>Investigator Notes</h2>
+                <p style="color:var(--text-muted); margin-bottom:20px;">Use this scratchpad to document findings, hashes, and observations during your investigation.</p>
+                
+                <div class="card">
+                    <div style="margin-bottom:15px;">
+                        <textarea id="note-input" rows="4" placeholder="Enter your observation or finding here..."></textarea>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <input type="text" id="note-artifact" placeholder="Related Artifact (optional)" style="width:300px;">
+                        <button class="btn btn-primary" onclick="NotesEngine.addNote()">Save Note</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">Saved Notes</h3>
+                    <table id="notes-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 150px;">Timestamp</th>
+                                <th style="width: 150px;">Artifact</th>
+                                <th>Observation</th>
+                                <th style="width: 80px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="notes-tbody">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="final-report" class="view-section" id="report-content">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2>Final Investigation Report</h2>
+                    <button class="btn btn-accent print-btn" onclick="window.print()">🖨️ Print / Export PDF</button>
+                </div>
+
+                <div class="card" style="margin-bottom: 20px;">
+                    <h3 class="card-title">Registration Information</h3>
+                    <table style="margin-top:10px; margin-bottom:0;">
+                        <tr><td style="width:200px; color:var(--text-muted);">Investigator Name:</td><td id="rep-out-name"></td></tr>
+                        <tr><td style="color:var(--text-muted);">Team Name:</td><td id="rep-out-team"></td></tr>
+                        <tr><td style="color:var(--text-muted);">Department:</td><td id="rep-out-dept"></td></tr>
+                        <tr><td style="color:var(--text-muted);">Roll Number:</td><td id="rep-out-roll"></td></tr>
+                        <tr><td style="color:var(--text-muted);">Team Members:</td><td id="rep-out-members"></td></tr>
+                    </table>
+                </div>
+                
+                <div class="card">
+                    <div class="input-group">
+                        <label>Executive Summary</label>
+                        <textarea id="rep-exec" rows="5" placeholder="Provide a high-level summary of the incident and findings..." onchange="ReportEngine.save()"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Scope of Investigation</label>
+                        <textarea id="rep-scope" rows="3" placeholder="What systems and artifacts were analyzed?" onchange="ReportEngine.save()"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Key Findings</label>
+                        <textarea id="rep-findings" rows="8" placeholder="Detail the technical findings regarding file access, USB usage, and exfiltration..." onchange="ReportEngine.save()"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Conclusion</label>
+                        <textarea id="rep-conclusion" rows="4" placeholder="Summarize the determination (Was IP stolen? By whom?)" onchange="ReportEngine.save()"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Recommendations</label>
+                        <textarea id="rep-recs" rows="4" placeholder="Security recommendations to prevent future incidents..." onchange="ReportEngine.save()"></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <section id="submit-investigation" class="view-section">
+                <div class="card" style="text-align:center; padding: 50px 20px;">
+                    <h2 style="font-size:24px; color:var(--accent);">Ready to Submit?</h2>
+                    <p style="margin:20px 0; color:var(--text-muted); max-width:600px; margin-left:auto; margin-right:auto;">
+                        By submitting this investigation, you finalize your score and generate the incident report webhook. 
+                        Ensure all questions are answered, timeline events are documented, and the Final Report section is complete.
+                    </p>
+                    
+                    <div style="display:flex; justify-content:center; gap:30px; margin:30px 0;">
+                        <div class="stat-box">
+                            <span class="stat-label">Current Score</span>
+                            <span class="stat-value" id="submit-score-display">0/100</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Questions</span>
+                            <span class="stat-value" id="submit-q-display">0/20</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Integrity Warnings</span>
+                            <span class="stat-value" id="submit-warn-display">0</span>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary print-btn" style="font-size:18px; padding:15px 40px;" onclick="SubmissionEngine.submit()">🚀 Submit Final Investigation</button>
+                    
+                    <div id="submission-status" style="margin-top:20px; font-weight:bold; display:none;"></div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+</div>
+
+<div id="notification-container"></div>
+
+<div id="reset-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Reset Investigation</h3>
+            <button class="btn" onclick="document.getElementById('reset-modal').style.display='none'">X</button>
+        </div>
+        <div class="modal-body">
+            <p style="color: var(--text-main); margin-bottom: 15px;">This action will permanently remove all investigation data stored in the browser.</p>
+            <ul style="color: var(--text-muted); margin-left: 20px; font-size: 13px; line-height: 1.6;">
+                <li>Student Information</li>
+                <li>Team Information</li>
+                <li>Answers</li>
+                <li>Notes</li>
+                <li>Timeline</li>
+                <li>Report</li>
+                <li>Progress & Scores</li>
+                <li>Warnings</li>
+            </ul>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="document.getElementById('reset-modal').style.display='none'">Cancel</button>
+            <button class="btn btn-danger" onclick="SessionEngine.resetSession()">Reset Investigation</button>
+        </div>
+    </div>
+</div>
+
+<div id="instructor-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Instructor Mode Login</h3>
+            <button class="btn" onclick="document.getElementById('instructor-modal').style.display='none'">X</button>
+        </div>
+        <div class="modal-body">
+            <div class="input-group">
+                <label>Instructor Password</label>
+                <input type="password" id="inst-password" placeholder="Enter password...">
+            </div>
+            <div id="inst-error" style="color:var(--danger); display:none; font-size:12px;">Incorrect password.</div>
+            
+            <div id="inst-dashboard" style="display:none; margin-top:20px;">
+                <h4 style="color:var(--success); border-bottom:1px solid var(--border-color); padding-bottom:8px; margin-bottom:12px;">✅ Instructor Access Granted</h4>
+                <table style="margin-bottom:14px; width:100%; font-size:13px;">
+                    <tr><td style="padding:4px 6px; color:var(--text-muted);">Student:</td><td id="inst-s-name" style="font-family:var(--font-mono); color:var(--accent);">—</td></tr>
+                    <tr><td style="padding:4px 6px; color:var(--text-muted);">Score:</td><td id="inst-s-score" style="font-family:var(--font-mono); color:var(--success);">—</td></tr>
+                    <tr><td style="padding:4px 6px; color:var(--text-muted);">Violations:</td><td id="inst-s-warn" style="font-family:var(--font-mono); color:var(--danger);">—</td></tr>
+                    <tr><td style="padding:4px 6px; color:var(--text-muted);">Hint Penalties:</td><td id="inst-s-pen" style="font-family:var(--font-mono); color:var(--warning);">—</td></tr>
+                </table>
+
+                <div style="border-top:1px solid var(--border-color);padding:12px 0;margin-bottom:4px;">
+                    <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">Answer Key</div>
+                    <div id="inst-answer-key" style="max-height:160px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;padding-right:4px;"></div>
+                </div>
+
+                <div style="border-top:1px solid var(--border-color);padding-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+                    <button class="btn btn-primary" onclick="InstructorEngine.exportState()" style="font-size:12px;padding:6px 12px;flex:1;">📥 Export JSON</button>
+                    <button class="btn" onclick="InstructorEngine.toggleAntiCheat()" style="font-size:12px;padding:6px 12px;flex:1;">🛡️ Anti-Cheat</button>
+                    <button class="btn btn-danger" onclick="InstructorEngine.resetData()" style="font-size:12px;padding:6px 12px;width:100%;margin-top:4px;">🗑️ Hard Reset Student Data</button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer" id="inst-footer">
+            <button class="btn btn-primary" onclick="InstructorEngine.login()">Login</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ==========================================================================
+   CONFIG & CONSTANTS
+   ========================================================================== */
+
+/* ═══════════════════════════════════════════════════════════════════
+   PROJECT FALCON — CENTRALIZED CONFIGURATION
+   Update ONLY this section to reconfigure for a new session.
+   ═══════════════════════════════════════════════════════════════════
+
+   DISCORD_WEBHOOK        → Your Discord channel webhook URL
+   REGISTRY_HIVES_DRIVE_LINK → OneDrive/Drive share link for Registry Hives zip
+   EVENT_LOGS_DRIVE_LINK  → OneDrive/Drive share link for Event Logs zip
+
+   autoResetOnLaunch: true  → Every page load starts fresh (Training Mode)
+   autoResetOnLaunch: false → Session persists across reloads
+   integrityMonitoring: true → Enables tab-switch / DevTools detection
+   ═══════════════════════════════════════════════════════════════════ */
+const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1514569249321127947/fvg44uIjtJdSOUp3Jj-74kpfr4EL6dwfsxd509v8bzWy_lpR3fAgoW-qflmPeknKd7nA";
+const REGISTRY_HIVES_DRIVE_LINK = "https://blucloudsoftech-my.sharepoint.com/:f:/g/personal/rahulraj_bluecloudsoftech_com/IgA6i3w-rypBQaFU9jsSP1-dAZTheHTbsyUxjMgFjc3gBG0?e=aytz2W";
+const EVENT_LOGS_DRIVE_LINK = "https://blucloudsoftech-my.sharepoint.com/:f:/g/personal/rahulraj_bluecloudsoftech_com/IgDnWr9coe1iS47PwLHZ39oQAcbQVrow2nOgHCSxYLIsAL8?e=gFKrlC";
+
+// GLOBAL CONFIGURATION
+const FALCON_CONFIG = {
+    autoResetOnLaunch: false,       // Set to true to enable Training Mode (auto resets localStorage on load)
+    persistSessions: true,          // Set to true to allow sessions to persist normally
+    integrityMonitoring: false,     // Anti-cheat disabled globally by default
+    autoSubmitOnViolation: false,
+    devToolsDetection: false,
+    copyPasteProtection: false,
+    rightClickProtection: false,
+    sessionDuration: 3 * 60 * 60 * 1000,
+};
+
+const MAX_WARNINGS = 3;
+const TOTAL_QUESTIONS = 20;
+
+// THE QUESTION BANK (Separated by Phase, precisely 20 questions total)
+const QUESTION_BANK = {
+    acquisition: [
+        { id: "q1", text: "What is the MD5 hash of the workstation image (WIN-FALCON01.E01)?", answer: "8f4e33f3dc3e414ff94e5fb6905cba8c", points: 5, hints: ["Check the Evidence Locker.", "Look at the meta-data under the disk icon."] },
+        { id: "q2", text: "What is the operating system version running on the image? (Format: Windows XX)", answer: "Windows 10", points: 5, hints: ["It's a modern Microsoft OS.", "Not 11, the one before it."] },
+        { id: "q3", text: "What is the Hostname of the system?", answer: "WIN-FALCON01", points: 5, hints: ["Read the Case Brief carefully.", "Check the scenario description."] },
+        { id: "q4", text: "Investigators identified several department folders under C:\\Projects. Which folder contains the confidential Project Falcon documents?", answer: "C:\\Projects\\Falcon", points: 5, hints: ["Check the root of the C: drive.", "Examine the directory structure using FTK Imager."] }
+    ],
+    filesystem: [
+        { id: "q5", text: "Review the contents of the documents stored within the Falcon project directory. Which Microsoft Word document contains confidential project bidding information?", answer: "Project_Falcon_Bid_2027.docx", points: 5, hints: ["Not all documents are equally sensitive. Examine document contents rather than relying solely on filenames.", "Open the Word documents within the Falcon directory using Autopsy's file viewer or export the file for review."] },
+        { id: "q6", text: "What is the full directory path of the spreadsheet containing acquisition target information?", answer: "C:\\Projects\\Falcon\\Acquisition_Targets_2026.xlsx", points: 5, hints: ["Review the project folders stored under the Projects directory.", "Use the File Views section in Autopsy or examine the directory structure using FTK Imager."] },
+        { id: "q7", text: "What is the name of the confidential project file found in the staging directory? (Include extension)", answer: "SourceCode.zip", points: 5, hints: ["Check the staging directory for archived files.", "Look for .zip extensions in the Falcon project folder."] },
+        { id: "q8", text: "When was the confidential project file (SourceCode.zip) created in the staging directory? (Format: YYYY-MM-DD HH:MM:SS IST)", answer: "2026-06-10 12:44:54 IST", points: 5, hints: ["Review file creation times in the staging area using Autopsy.", "Convert UTC timestamps to IST (+5:30)."] },
+        { id: "q9", type: "mcq", text: "Which artifact can provide evidence that the deleted file was previously accessed by the user?", options: ["A. USBSTOR", "B. LNK File", "C. Security Event ID 4624", "D. SAM Hive"], answer: "B. LNK File", points: 5, hints: ["Consider artifacts created when files are opened through Windows Explorer.", "Examine shortcut-based artifacts generated by Windows."] },
+        { id: "q10", text: "Which web browser was primarily used by the suspect?", answer: "Chrome", aliases: ["chrome", "google chrome", "GOOGLE CHROME"], points: 5, hints: ["Look in the AppData\\Local folder for browser profile directories.", "The browser stores its history in an SQLite database file named \'History\'."] }
+    ],
+    browser: [
+        { id: "q11", text: "What cloud storage domain was accessed to upload the files?", answer: "Dropbox", aliases: ["dropbox", "dropbox.com", "www.dropbox.com"], points: 5, hints: ["Check browser history for cloud storage domains.", "Look for popular file hosting and sharing services."] },
+        { id: "q12", text: "What search term did the user query immediately before clearing their browser history?", answer: "how to permanently delete files", points: 5, hints: ["They were looking for anti-forensic techniques.", "Starts with 'how to permanently...'"] },
+        { id: "q13", text: "At what date and time (IST) was PuTTY downloaded?", answer: "2026-06-10 14:10:44 IST", points: 5, hints: ["Check the browser downloads database.", "Ensure you format it correctly as requested."] },
+        { id: "q14", text: "What software was downloaded by the user shortly before USB activity occurred?", answer: "PuTTY", points: 5, hints: ["Check the browser downloads history.", "It's a popular SSH and telnet client."] },
+        { id: "q15", type: "mcq", text: "Was a removable USB storage device connected to the workstation during the investigation period?", options: ["A. Yes", "B. No", "C. Unable to Determine", "D. Evidence Corrupted"], answer: "A. Yes", points: 5, hints: ["Check the SYSTEM registry hive.", "Look for USBSTOR entries in Registry Explorer."] }
+    ],
+    registry: [
+        { id: "q16", text: "What is the Vendor Name of the unauthorized USB device connected to the system?", answer: "SanDisk Corp.", points: 5, hints: ["Look in the SYSTEM registry hive under USBSTOR.", "It's a major flash drive manufacturer."] },
+        { id: "q17", text: "What is the Product Name of the unauthorized USB device?", answer: "Cruzer Blade", points: 5, hints: ["Check the device parameters in the registry.", "It's a specific SanDisk model."] },
+        { id: "q18", text: "What is the Serial Number of the USB device?", answer: "4C530001260815113285", points: 5, hints: ["Found in the USBSTOR registry key after the '&' symbol.", "Length is 20 characters."] }
+    ],
+    eventlogs: [
+        { id: "q19", text: "At what date and time (IST) did the USB device connection occur?", answer: "2026-06-10 14:53:00 IST", points: 5, hints: ["Check registry first install dates or Event logs.", "Ensure you format the answer with IST suffix."] }
+    ],
+    timeline: [
+        { id: "q20", text: "At what time (UTC) was the system shut down? (Format: YYYY-MM-DD HH:MM:SS)", answer: "2026-06-08 03:05:00", points: 5, hints: ["System Event ID 6006.", "Check the System.evtx log in Event Viewer."] }
+    ]
+};
+
+// Flat array for easy lookup
+const ALL_QUESTIONS = Object.values(QUESTION_BANK).flat();
+
+/* ==========================================================================
+   STATE MANAGEMENT (LocalStorage)
+   ========================================================================== */
+let AppState = {
+    investigatorName: "",
+    teamName: "",
+    department: "",
+    rollNumber: "",
+    teamMembers: [],
+    startTime: Date.now(),
+    answers: {},       // { qId: "user_input" }
+    correctList: [],   // [qId, qId]
+    hintsUsed: {},     // { qId: [1, 2] }
+    downloadedArtifacts: [], 
+    warnings: 0,
+    violationLog: [],
+    timeline: [],      
+    notes: [],         
+    report: {
+        exec: "", scope: "", findings: "", conclusion: "", recs: ""
+    },
+    submitted: false
+};
+
+const STORAGE_KEY = "FALCON_DFIR_STATE";
+
+function saveState() {
+    // After submission, still allow notes/timeline saves but skip scoring updates
+    if (FALCON_CONFIG.persistSessions || !FALCON_CONFIG.autoResetOnLaunch) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(AppState));
+    }
+    if (!AppState.submitted) {
+        UI.updateDashboard();
+    }
+}
+
+function loadState() {
+    if (FALCON_CONFIG.autoResetOnLaunch) {
+        localStorage.removeItem("falcon_state");
+        localStorage.removeItem(STORAGE_KEY);
+    }
+
+    if (FALCON_CONFIG.persistSessions || !FALCON_CONFIG.autoResetOnLaunch) {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                AppState = { ...AppState, ...parsed };
+            } catch(e) {
+                console.error("State parse error");
+            }
+        }
+    }
+}
+
+/* ==========================================================================
+   UTILITY & UI FUNCTIONS
+   ========================================================================== */
+const Util = {
+    escapeHTML: (str) => {
+        const p = document.createElement("p");
+        p.appendChild(document.createTextNode(str));
+        return p.innerHTML;
+    },
+    formatTime: (ms) => {
+        let totalSecs = Math.floor(ms / 1000);
+        let h = Math.floor(totalSecs / 3600).toString().padStart(2, '0');
+        let m = Math.floor((totalSecs % 3600) / 60).toString().padStart(2, '0');
+        let s = (totalSecs % 60).toString().padStart(2, '0');
+        return `${h}:${m}:${s}`;
+    },
+    generateId: () => Math.random().toString(36).substr(2, 9),
+    notify: (msg, type="success") => {
+        const cont = document.getElementById('notification-container');
+        const el = document.createElement('div');
+        el.className = `notification ${type}`;
+        el.innerHTML = `<span>${msg}</span><span style="cursor:pointer" onclick="this.parentElement.remove()">✕</span>`;
+        cont.appendChild(el);
+        setTimeout(() => {
+            el.style.animation = 'fadeOut 0.3s forwards';
+            setTimeout(() => el.remove(), 300);
+        }, 4000);
+    }
+};
+
+const SessionEngine = {
+    confirmReset: () => {
+        document.getElementById('reset-modal').style.display = 'flex';
+    },
+    resetSession: () => {
+        localStorage.removeItem("falcon_state");
+        localStorage.removeItem(STORAGE_KEY);
+        location.reload();
+    }
+};
+
+const LoginEngine = {
+    addTeamMember: () => {
+        const container = document.getElementById('team-members-container');
+        const row = document.createElement('div');
+        row.className = 'team-member-row';
+        row.innerHTML = `
+            <input type="text" class="tm-input" placeholder="Team Member Name">
+            <button class="btn-remove" onclick="this.parentElement.remove()">X</button>
+        `;
+        container.appendChild(row);
+    },
+    startInvestigation: () => {
+        const name = document.getElementById('reg-name').value.trim();
+        const team = document.getElementById('reg-team').value.trim();
+        const dept = document.getElementById('reg-dept').value.trim();
+        const roll = document.getElementById('reg-roll').value.trim();
+        
+        if(!name || !team || !dept) {
+            document.getElementById('login-error').style.display = 'block';
+            return;
+        }
+
+        const members = [];
+        document.querySelectorAll('.tm-input').forEach(input => {
+            if(input.value.trim()) members.push(input.value.trim());
+        });
+
+        AppState.investigatorName = name;
+        AppState.teamName = team;
+        AppState.department = dept;
+        AppState.rollNumber = roll;
+        AppState.teamMembers = members;
+        
+        saveState();
+        
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app-container').style.display = 'flex';
+        UI.init();
+    },
+    checkAuth: () => {
+        if(AppState.investigatorName && AppState.teamName && AppState.department) {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-container').style.display = 'flex';
+            UI.init();
+        }
+    }
+};
+
+const ArtifactEngine = {
+    requestInstructorEvidence: () => {
+        Util.notify("The forensic disk image is distributed separately by the instructor due to its size.", "warning");
+    },
+    download: (id, btn) => {
+        let url = "";
+        if (id === 'hives') url = REGISTRY_HIVES_DRIVE_LINK;
+        if (id === 'logs') url = EVENT_LOGS_DRIVE_LINK;
+        
+        if (!url || url === "PASTE_GOOGLE_DRIVE_LINK_HERE") {
+            btn.innerText = "⚠ Artifact URL Not Configured";
+            btn.classList.remove('btn-accent');
+            btn.classList.add('btn-danger');
+            btn.disabled = true;
+            Util.notify("Artifact URL not configured. Contact your instructor.", "danger");
+            return;
+        }
+
+        window.open(url, '_blank');
+        
+        if (!AppState.downloadedArtifacts.includes(id)) {
+            AppState.downloadedArtifacts.push(id);
+            saveState();
+        }
+
+        btn.innerText = "Verified & Saved";
+        btn.classList.remove('btn-accent');
+        btn.classList.add('btn-primary');
+        Util.notify("Artifact downloaded and verified.", "success");
+    },
+    render: () => {
+        if (!AppState.downloadedArtifacts) return;
+        
+        AppState.downloadedArtifacts.forEach(id => {
+            const btn = document.getElementById(`btn-dl-${id}`);
+            if (btn) {
+                btn.innerText = "Verified & Saved";
+                btn.classList.remove('btn-accent');
+                btn.classList.add('btn-primary');
+            }
+        });
+    }
+};
+
+const UI = {
+    init: () => {
+        // Navigation Setup
+        document.querySelectorAll('.nav-item[data-target]').forEach(item => {
+            item.addEventListener('click', (e) => {
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                item.classList.add('active');
+                
+                document.querySelectorAll('.view-section').forEach(s => {
+                    s.classList.remove('active');
+                });
+                document.getElementById(item.getAttribute('data-target')).classList.add('active');
+            });
+        });
+
+        // Modals
+        document.getElementById('instructor-login-btn').addEventListener('click', () => {
+            document.getElementById('instructor-modal').style.display = 'flex';
+        });
+
+        // Render Questions by Phase
+        const phaseMapping = {
+            acquisition: 1, filesystem: 2, browser: 3, registry: 4, eventlogs: 5, timeline: 6
+        };
+
+        const _qOffsets = {};
+        let _qCounter = 1;
+        Object.keys(QUESTION_BANK).forEach(pk => { _qOffsets[pk] = _qCounter; _qCounter += QUESTION_BANK[pk].length; });
+
+        Object.keys(QUESTION_BANK).forEach(phaseKey => {
+            const phaseNum = phaseMapping[phaseKey];
+            const container = document.getElementById(`q-container-${phaseNum}`);
+            if(!container) return;
+            
+            if(container.dataset.rendered === '1') return; // prevent duplication
+            container.dataset.rendered = '1';
+            container.innerHTML = '';
+            
+            QUESTION_BANK[phaseKey].forEach((q, idx) => {
+                const block = document.createElement('div');
+                block.className = 'question-block';
+                block.id = `block-${q.id}`;
+                
+                let hintsHTML = '';
+                [1, 2].forEach(hNum => {
+                    const penalty = hNum === 1 ? 0.5 : 1;
+                    hintsHTML += `<button class="hint-btn" id="btn-hint-${q.id}-${hNum}" onclick="HintEngine.useHint('${q.id}', ${hNum})">Hint ${hNum} (-${penalty} pts)</button>`;
+                });
+
+                let hintsTextHTML = '';
+                q.hints.forEach((hText, hIndex) => {
+                    hintsTextHTML += `<div class="hint-text" id="text-hint-${q.id}-${hIndex+1}">💡 ${hText}</div>`;
+                });
+
+                let answerUI = '';
+                if (q.type === 'mcq') {
+                    let optionsHTML = `<option value="">Select an answer...</option>`;
+                    q.options.forEach(opt => {
+                        optionsHTML += `<option value="${opt}">${opt}</option>`;
+                    });
+                    answerUI = `<select id="input-${q.id}" onchange="ScoringEngine.checkAnswer('${q.id}', this.value)">${optionsHTML}</select>`;
+                } else {
+                    answerUI = `<input type="text" id="input-${q.id}" placeholder="Enter answer..." onchange="ScoringEngine.checkAnswer('${q.id}', this.value)">`;
+                }
+
+                block.innerHTML = `
+                    <div class="question-header">
+                        <span>Q${_qOffsets[phaseKey] + idx} (${q.points} pts)</span>
+                        <span id="status-${q.id}" style="font-size:12px; color:var(--text-muted);">PENDING</span>
+                    </div>
+                    <div class="question-text">${q.text}</div>
+                    <div class="answer-wrapper">
+                        <div class="status-icon" id="icon-${q.id}">?</div>
+                        ${answerUI}
+                    </div>
+                    <div class="hint-engine">
+                        <div class="hint-buttons">${hintsHTML}</div>
+                        ${hintsTextHTML}
+                    </div>
+                `;
+                container.appendChild(block);
+            });
+        });
+
+        // Populate Static Info Fields
+        document.getElementById('brief-inv-name').innerText = AppState.investigatorName;
+        document.getElementById('brief-inv-team').innerText = AppState.teamName;
+        document.getElementById('brief-inv-dept').innerText = AppState.department;
+        document.getElementById('brief-inv-members').innerText = AppState.teamMembers.length > 0 ? AppState.teamMembers.join(", ") : "None";
+
+        document.getElementById('top-inv-name').innerText = AppState.investigatorName;
+        document.getElementById('top-inv-team').innerText = AppState.teamName;
+        document.getElementById('top-inv-dept').innerText = AppState.department;
+
+        document.getElementById('rep-out-name').innerText = AppState.investigatorName;
+        document.getElementById('rep-out-team').innerText = AppState.teamName;
+        document.getElementById('rep-out-dept').innerText = AppState.department;
+        document.getElementById('rep-out-roll').innerText = AppState.rollNumber || "N/A";
+        document.getElementById('rep-out-members').innerText = AppState.teamMembers.length > 0 ? AppState.teamMembers.join(", ") : "None";
+
+        // Populate Report
+        document.getElementById('rep-exec').value = AppState.report.exec || "";
+        document.getElementById('rep-scope').value = AppState.report.scope || "";
+        document.getElementById('rep-findings').value = AppState.report.findings || "";
+        document.getElementById('rep-conclusion').value = AppState.report.conclusion || "";
+        document.getElementById('rep-recs').value = AppState.report.recs || "";
+
+        // Restore State into UI
+        AppState.correctList.forEach(qId => {
+            const input = document.getElementById(`input-${qId}`);
+            if(input) {
+                input.value = AppState.answers[qId];
+                input.disabled = true;
+                document.getElementById(`block-${qId}`).classList.add('correct');
+                document.getElementById(`icon-${qId}`).classList.add('correct');
+                document.getElementById(`icon-${qId}`).innerHTML = '✓';
+                document.getElementById(`status-${qId}`).innerHTML = 'SOLVED';
+                document.getElementById(`status-${qId}`).style.color = 'var(--success)';
+            }
+        });
+
+        Object.keys(AppState.hintsUsed).forEach(qId => {
+            AppState.hintsUsed[qId].forEach(hNum => {
+                const btn = document.getElementById(`btn-hint-${qId}-${hNum}`);
+                const txt = document.getElementById(`text-hint-${qId}-${hNum}`);
+                if(btn && txt) {
+                    btn.classList.add('revealed');
+                    btn.disabled = true;
+                    txt.classList.add('active');
+                }
+            });
+        });
+
+        ArtifactEngine.render();
+        NotesEngine.render();
+        TimelineEngine.render();
+        UI.updateDashboard();
+        
+        if (AppState.submitted) {
+            document.getElementById('submission-status').style.display = 'block';
+            document.getElementById('submission-status').style.color = 'var(--success)';
+            document.getElementById('submission-status').innerHTML = "INVESTIGATION ALREADY SUBMITTED. READ ONLY MODE.";
+            document.querySelectorAll('input, textarea, select, button').forEach(el => {
+                if(!el.classList.contains('nav-item') && !el.classList.contains('print-btn') && el.id !== 'instructor-login-btn') {
+                    el.disabled = true;
+                }
+            });
+        }
+        
+        if (FALCON_CONFIG.autoResetOnLaunch) {
+            document.getElementById('session-mode-indicator').style.display = 'flex';
+        }
+    },
+
+    updateDashboard: () => {
+        let rawScore = 0;
+        let penaltyPoints = 0;
+        
+        AppState.correctList.forEach(qId => {
+            const q = ALL_QUESTIONS.find(x => x.id === qId);
+            if(q) rawScore += q.points;
+        });
+
+        Object.keys(AppState.hintsUsed).forEach(qId => {
+            AppState.hintsUsed[qId].forEach(hNum => penaltyPoints += (hNum === 1 ? 0.5 : 1.0));
+        });
+
+        const finalScore = Math.max(0, rawScore - penaltyPoints);
+        const maxScore = ALL_QUESTIONS.reduce((sum, q) => sum + q.points, 0);
+        const progressPct = Math.round((AppState.correctList.length / TOTAL_QUESTIONS) * 100);
+
+        document.getElementById('top-score').innerText = `${finalScore} / ${maxScore}`;
+        document.getElementById('top-progress').innerText = `${progressPct}%`;
+        document.getElementById('top-penalties').innerText = `-${penaltyPoints}`;
+        
+        document.getElementById('submit-score-display').innerText = `${finalScore}/${maxScore}`;
+        document.getElementById('submit-q-display').innerText = `${AppState.correctList.length}/${TOTAL_QUESTIONS}`;
+        document.getElementById('submit-warn-display').innerText = AppState.warnings;
+
+        // Phase Badges
+        const phaseMapping = { acquisition: 1, filesystem: 2, browser: 3, registry: 4, eventlogs: 5, timeline: 6 };
+        
+        Object.keys(QUESTION_BANK).forEach(phaseKey => {
+            const phaseNum = phaseMapping[phaseKey];
+            const phaseQs = QUESTION_BANK[phaseKey];
+            const solvedPhase = phaseQs.filter(q => AppState.correctList.includes(q.id)).length;
+            const badge = document.getElementById(`badge-p${phaseNum}`);
+            if(badge) {
+                badge.innerText = `${solvedPhase}/${phaseQs.length}`;
+                if(solvedPhase > 0 && solvedPhase === phaseQs.length) {
+                    document.getElementById(`nav-p${phaseNum}`).classList.add('completed');
+                }
+            }
+        });
+
+        // Integrity UI
+        const intUI = document.getElementById('integrity-status-ui');
+        if (!FALCON_CONFIG.integrityMonitoring) {
+            intUI.className = 'integrity-indicator disabled';
+            intUI.innerHTML = '🛡️ Integrity: Disabled (Development Mode)';
+        } else if (AppState.warnings === 0) {
+            intUI.className = 'integrity-indicator';
+            intUI.innerHTML = '🛡️ Integrity: SECURE';
+        } else if (AppState.warnings < MAX_WARNINGS) {
+            intUI.className = 'integrity-indicator warning';
+            intUI.innerHTML = `⚠️ Integrity: WARNING (${AppState.warnings}/${MAX_WARNINGS})`;
+        } else {
+            intUI.className = 'integrity-indicator danger';
+            intUI.innerHTML = `❌ Integrity: COMPROMISED`;
+        }
+    }
+};
+
+/* ==========================================================================
+   ENGINES
+   ========================================================================== */
+const ScoringEngine = {
+    checkAnswer: (qId, val) => {
+        if(AppState.correctList.includes(qId)) return;
+        
+        const q = ALL_QUESTIONS.find(x => x.id === qId);
+        if(!q) return;
+
+        AppState.answers[qId] = val; // save attempt
+
+        // Normalization engine for smart matching
+        const normalize = (str) => str.trim().toLowerCase().replace(/\\/g, '/').replace(/\s+/g, ' ');
+        const normalizedVal = normalize(val);
+        const normalizedAns = normalize(q.answer);
+
+        let isCorrect = (normalizedVal === normalizedAns);
+
+        if (!isCorrect && q.aliases) {
+            isCorrect = q.aliases.some(alias => normalize(alias) === normalizedVal);
+        }
+
+        // For MCQs, exact match check against dropdown text
+        if (q.type === 'mcq' && !isCorrect) {
+            isCorrect = (normalizedVal === normalizedAns);
+        }
+
+        if(isCorrect) {
+            AppState.correctList.push(qId);
+            Util.notify("Correct Answer!", "success");
+            
+            const block = document.getElementById(`block-${qId}`);
+            block.classList.add('correct');
+            document.getElementById(`icon-${qId}`).classList.add('correct');
+            document.getElementById(`icon-${qId}`).innerHTML = '✓';
+            document.getElementById(`status-${qId}`).innerHTML = 'SOLVED';
+            document.getElementById(`status-${qId}`).style.color = 'var(--success)';
+            document.getElementById(`input-${qId}`).disabled = true;
+            
+            saveState();
+        } else {
+            Util.notify("Incorrect Answer. Try again or use a hint.", "danger");
+        }
+    }
+};
+
+const HintEngine = {
+    useHint: (qId, hintNum) => {
+        if (AppState.submitted) return;
+        if (!AppState.hintsUsed[qId]) AppState.hintsUsed[qId] = [];
+        if (AppState.hintsUsed[qId].includes(hintNum)) return;
+
+        AppState.hintsUsed[qId].push(hintNum);
+        
+        const btn = document.getElementById(`btn-hint-${qId}-${hintNum}`);
+        const txt = document.getElementById(`text-hint-${qId}-${hintNum}`);
+        
+        btn.classList.add('revealed');
+        btn.disabled = true;
+        txt.classList.add('active');
+        
+        const penalty = hintNum === 1 ? 0.5 : 1.0;
+        Util.notify(`Hint ${hintNum} revealed. -${penalty} points.`, "warning");
+        saveState();
+    }
+};
+
+const NotesEngine = {
+    addNote: () => {
+        const text = document.getElementById('note-input').value.trim();
+        const artifact = document.getElementById('note-artifact').value.trim();
+        if(!text) return;
+
+        AppState.notes.push({
+            id: Util.generateId(),
+            time: new Date().toISOString().split('T')[1].substr(0,8),
+            artifact: artifact || "General",
+            text: text
+        });
+
+        document.getElementById('note-input').value = '';
+        document.getElementById('note-artifact').value = '';
+        saveState();
+        NotesEngine.render();
+        Util.notify("Note saved.", "success");
+    },
+    deleteNote: (id) => {
+        AppState.notes = AppState.notes.filter(n => n.id !== id);
+        saveState();
+        NotesEngine.render();
+    },
+    render: () => {
+        const tbody = document.getElementById('notes-tbody');
+        tbody.innerHTML = '';
+        AppState.notes.forEach(n => {
+            tbody.innerHTML += `
+                <tr>
+                    <td style="font-family:var(--font-mono); color:var(--text-muted);">${n.time}</td>
+                    <td><span class="badge badge-outline">${Util.escapeHTML(n.artifact)}</span></td>
+                    <td>${Util.escapeHTML(n.text)}</td>
+                    <td><span class="delete-event" onclick="NotesEngine.deleteNote('${n.id}')">Delete</span></td>
+                </tr>
+            `;
+        });
+    }
+};
+
+const TimelineEngine = {
+    addEvent: () => {
+        const time = document.getElementById('tl-time').value.trim();
+        const desc = document.getElementById('tl-desc').value.trim();
+        const art = document.getElementById('tl-artifact').value.trim();
+        
+        if(!time || !desc) {
+            Util.notify("Time and Description are required.", "danger");
+            return;
+        }
+
+        AppState.timeline.push({
+            id: Util.generateId(),
+            time: time,
+            desc: desc,
+            artifact: art || "Analyst Observation"
+        });
+
+        // Sort timeline chronologically
+        AppState.timeline.sort((a,b) => a.time.localeCompare(b.time));
+
+        document.getElementById('tl-time').value = '';
+        document.getElementById('tl-desc').value = '';
+        document.getElementById('tl-artifact').value = '';
+        saveState();
+        TimelineEngine.render();
+        Util.notify("Timeline event added.", "success");
+    },
+    deleteEvent: (id) => {
+        AppState.timeline = AppState.timeline.filter(t => t.id !== id);
+        saveState();
+        TimelineEngine.render();
+    },
+    render: () => {
+        const cont = document.getElementById('timeline-display');
+        cont.innerHTML = '';
+        AppState.timeline.forEach(t => {
+            cont.innerHTML += `
+                <div class="timeline-event">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-header">
+                            <span>${Util.escapeHTML(t.time)}</span>
+                            <span class="delete-event" onclick="TimelineEngine.deleteEvent('${t.id}')">Delete</span>
+                        </div>
+                        <div class="timeline-desc">${Util.escapeHTML(t.desc)}</div>
+                        <div class="timeline-artifact">${Util.escapeHTML(t.artifact)}</div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+};
+
+const ReportEngine = {
+    save: () => {
+        AppState.report.exec = document.getElementById('rep-exec').value;
+        AppState.report.scope = document.getElementById('rep-scope').value;
+        AppState.report.findings = document.getElementById('rep-findings').value;
+        AppState.report.conclusion = document.getElementById('rep-conclusion').value;
+        AppState.report.recs = document.getElementById('rep-recs').value;
+        saveState();
+    }
+};
+
+/* ==========================================================================
+   INTEGRITY ENGINE (Proctoring)
+   ========================================================================== */
+const IntegrityEngine = {
+    logViolation: (reason) => {
+        if (!FALCON_CONFIG.integrityMonitoring) return;
+        if(AppState.submitted) return;
+        
+        AppState.warnings++;
+        AppState.violationLog.push({
+            time: new Date().toISOString(),
+            reason: reason
+        });
+        
+        saveState();
+        
+        if(AppState.warnings >= MAX_WARNINGS && FALCON_CONFIG.autoSubmitOnViolation) {
+            Util.notify(`FINAL WARNING: Integrity compromised. Auto-submitting investigation...`, "danger");
+            setTimeout(() => SubmissionEngine.submit(true), 2000);
+        } else {
+            Util.notify(`INTEGRITY VIOLATION LOGGED: ${reason} (${AppState.warnings}/${MAX_WARNINGS})`, "warning");
+        }
+    },
+    init: () => {
+        // Tab switching / Minimize
+        document.addEventListener('visibilitychange', () => {
+            if(document.visibilityState === 'hidden' && FALCON_CONFIG.integrityMonitoring) {
+                IntegrityEngine.logViolation("Tab unfocused or window minimized.");
+            }
+        });
+
+        // Right click prevention
+        document.addEventListener('contextmenu', (e) => {
+            if(FALCON_CONFIG.integrityMonitoring && FALCON_CONFIG.rightClickProtection) {
+                if(e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    IntegrityEngine.logViolation("Unauthorized right-click detected.");
+                }
+            }
+        });
+
+        // Copy/Paste heuristics
+        document.addEventListener('copy', (e) => {
+            if(FALCON_CONFIG.integrityMonitoring && FALCON_CONFIG.copyPasteProtection) {
+                if(e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                    IntegrityEngine.logViolation("Unauthorized data copy detected.");
+                }
+            }
+        });
+        
+        // Basic DevTools detection (heuristic)
+        let devtoolsOpen = false;
+        const threshold = 160;
+        setInterval(() => {
+            if(!FALCON_CONFIG.integrityMonitoring || !FALCON_CONFIG.devToolsDetection) return;
+            const widthDiff = window.outerWidth - window.innerWidth > threshold;
+            const heightDiff = window.outerHeight - window.innerHeight > threshold;
+            if((widthDiff || heightDiff) && !devtoolsOpen) {
+                devtoolsOpen = true;
+                IntegrityEngine.logViolation("Developer Tools opened.");
+            } else if (!widthDiff && !heightDiff) {
+                devtoolsOpen = false;
+            }
+        }, 1000);
+    }
+};
+
+/* ==========================================================================
+   SUBMISSION ENGINE (Discord Webhook)
+   ========================================================================== */
+const SubmissionEngine = {
+    submit: (autoSubmitted = false) => {
+        if (AppState.submitted) return;
+        
+        AppState.submitted = true;
+        saveState();
+
+        // Read score from AppState directly to avoid stale DOM values
+        let _rawScore = 0;
+        AppState.correctList.forEach(qId => {
+            const _q = ALL_QUESTIONS.find(x => x.id === qId);
+            if (_q) _rawScore += _q.points;
+        });
+        let _penalty = 0;
+        Object.keys(AppState.hintsUsed).forEach(qId => {
+            AppState.hintsUsed[qId].forEach(h => _penalty += (h === 1 ? 0.5 : 1.0));
+        });
+        const _finalScore = Math.max(0, _rawScore - _penalty);
+        const _maxScore = ALL_QUESTIONS.reduce((sum, q) => sum + q.points, 0);
+        const _progressPct = Math.round((AppState.correctList.length / TOTAL_QUESTIONS) * 100);
+        const statScore = `${_finalScore}/${_maxScore}`;
+        const statProgress = `${_progressPct}%`;
+
+        const hintsCount = Object.values(AppState.hintsUsed).flat().length;
+        let hintPenaltyTotal = 0;
+        Object.values(AppState.hintsUsed).flat().forEach(h => hintPenaltyTotal += (h === 1 ? 0.5 : 1.0));
+        
+        const embed = {
+            embeds: [{
+                title: autoSubmitted ? "🚨 AUTO-SUBMISSION: INTEGRITY COMPROMISED" : "✅ Investigation Submitted: DFIR-2026-007",
+                color: autoSubmitted ? 16711680 : 3925574,
+                timestamp: new Date().toISOString(),
+                fields: [
+                    { name: "Case ID", value: "DFIR-2026-007", inline: true },
+                    { name: "Investigator", value: AppState.investigatorName || "Unknown", inline: true },
+                    { name: "Team Name", value: AppState.teamName || "Unknown", inline: true },
+                    { name: "Department", value: AppState.department || "Unknown", inline: true },
+                    { name: "Roll Number", value: AppState.rollNumber || "N/A", inline: true },
+                    { name: "Team Members", value: AppState.teamMembers.length > 0 ? AppState.teamMembers.join(", ") : "None", inline: true },
+                    { name: "Final Score", value: statScore, inline: true },
+                    { name: "Completion", value: statProgress, inline: true },
+                    { name: "Hint Usage", value: `${hintsCount} hints used (-${hintPenaltyTotal} pts)`, inline: true },
+                    { name: "Timeline Events Count", value: AppState.timeline.length.toString() + " events", inline: true },
+                    { name: "Integrity Warnings", value: AppState.warnings.toString(), inline: true },
+                    { name: "Executive Summary", value: AppState.report.exec ? AppState.report.exec.substring(0, 1000) : "Not provided", inline: false },
+                    { name: "Final Findings", value: AppState.report.findings ? AppState.report.findings.substring(0, 1000) : "Not provided", inline: false }
+                ],
+                footer: { text: "Project Falcon DFIR Platform" }
+            }]
+        };
+
+        const statusDiv = document.getElementById('submission-status');
+        statusDiv.style.display = 'block';
+        statusDiv.style.color = 'var(--text-muted)';
+        statusDiv.innerHTML = "Submitting to HQ...";
+
+        fetch(DISCORD_WEBHOOK, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(embed)
+        }).then(res => {
+            statusDiv.style.color = 'var(--success)';
+            statusDiv.innerHTML = "Investigation successfully transmitted to HQ. This session is now read-only.";
+            Util.notify("Investigation Submitted successfully.", "success");
+            UI.init(); 
+        }).catch(err => {
+            statusDiv.style.color = 'var(--warning)';
+            statusDiv.innerHTML = "Network error communicating with HQ, but investigation is saved locally and finalized.";
+            UI.init();
+        });
+    }
+};
+
+/* ==========================================================================
+   INSTRUCTOR ENGINE
+   ========================================================================== */
+const InstructorEngine = {
+    login: () => {
+        const pw = document.getElementById('inst-password').value;
+        if(pw === "falconadmin2026") {
+            document.getElementById('inst-error').style.display = 'none';
+            document.getElementById('inst-dashboard').style.display = 'block';
+            document.getElementById('inst-footer').style.display = 'none';
+
+            document.getElementById('inst-s-name').innerText = AppState.investigatorName || "N/A";
+            document.getElementById('inst-s-score').innerText = document.getElementById('submit-score-display').innerText;
+            document.getElementById('inst-s-warn').innerText = AppState.warnings;
+            let pens = 0;
+            Object.keys(AppState.hintsUsed).forEach(q => AppState.hintsUsed[q].forEach(h => pens += (h === 1 ? 0.5 : 1.0)));
+            document.getElementById('inst-s-pen').innerText = pens;
+
+            InstructorEngine.renderAnswerKey();
+        } else {
+            document.getElementById('inst-error').style.display = 'block';
+        }
+    },
+    renderAnswerKey: () => {
+        const c = document.getElementById('inst-answer-key');
+        if(!c) return;
+        c.innerHTML = '';
+        ALL_QUESTIONS.forEach((q, i) => {
+            c.innerHTML += `<div style="font-size:11px;padding:4px 8px;background:var(--bg-input);border-radius:4px;border:1px solid var(--border-color);display:flex;gap:8px;margin-bottom:3px;">
+                <span style="color:var(--text-muted);font-weight:700;width:24px;">Q${i+1}</span>
+                <span style="color:var(--accent);font-family:var(--font-mono);flex:1;">${Util.escapeHTML(q.answer)}</span>
+                <span style="color:var(--text-muted);font-size:10px;">${q.points}pts</span>
+            </div>`;
+        });
+    },
+    exportState: () => {
+        const blob = new Blob([JSON.stringify(AppState, null, 2)], {type:'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `falcon_${AppState.investigatorName || 'state'}_${Date.now()}.json`;
+        a.click();
+        Util.notify('State exported.', 'success');
+    },
+    toggleAntiCheat: () => {
+        FALCON_CONFIG.integrityMonitoring = !FALCON_CONFIG.integrityMonitoring;
+        Util.notify(`Integrity monitoring: ${FALCON_CONFIG.integrityMonitoring ? 'ENABLED' : 'DISABLED'}`, 'success');
+        UI.updateDashboard();
+    },
+    resetData: () => {
+        if(confirm("Wipe all local data for this student and reload?")) {
+            localStorage.removeItem(STORAGE_KEY);
+            location.reload();
+        }
+    }
+};
+
+/* ==========================================================================
+   BOOTSTRAP
+   ========================================================================== */
+window.onload = () => {
+    loadState();
+    LoginEngine.checkAuth();
+    IntegrityEngine.init();
+
+    // Timer
+    setInterval(() => {
+        const elapsed = Date.now() - AppState.startTime;
+        document.getElementById('timer-display').innerText = Util.formatTime(elapsed);
+    }, 1000);
+
+    // Autosave
+    setInterval(() => {
+        saveState();
+    }, 10000);
+};
+
+</script>
+</body>
