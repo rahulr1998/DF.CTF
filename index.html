@@ -995,6 +995,7 @@ tr:hover td {
         <div class="login-header">
             <h1>PROJECT FALCON</h1>
             <p>Digital Forensics Investigation Platform</p>
+            <p id="session-status-msg" style="font-size:11px;color:#00d68f;margin-top:4px;letter-spacing:0.5px;">&#10003; New session — enter your details to begin</p>
             <h3 style="margin-top: 20px; color: var(--text-main);">Student Registration Form</h3>
         </div>
         
@@ -1064,10 +1065,7 @@ tr:hover td {
                 <span class="icon">🔌</span> 4. Registry & USB <span class="badge" id="badge-p4">0/0</span>
             </div>
             <div class="nav-item" data-target="phase-5" id="nav-p5">
-                <span class="icon">📜</span> 5. Event Logs <span class="badge" id="badge-p5">0/0</span>
-            </div>
-            <div class="nav-item" data-target="phase-6" id="nav-p6">
-                <span class="icon">⏱</span> 6. Timeline Recon <span class="badge" id="badge-p6">0/0</span>
+                <span class="icon">⏱</span> 5. Timeline Recon <span class="badge" id="badge-p5">0/0</span>
             </div>
             
             <div class="nav-section-title">Reporting</div>
@@ -1291,20 +1289,14 @@ tr:hover td {
 
             <section id="phase-4" class="view-section">
                 <h2>Phase 4: Registry & USB Analysis</h2>
-                <p style="color:var(--text-muted); margin-bottom:20px;">Determine if an unauthorized USB mass storage device was connected to the system.</p>
+                <p style="color:var(--text-muted); margin-bottom:20px;">Determine whether an unauthorized USB device was connected. If so, identify the device and correlate its connection with download activity.</p>
                 <div id="q-container-4"></div>
             </section>
 
             <section id="phase-5" class="view-section">
-                <h2>Phase 5: Event Log Analysis</h2>
-                <p style="color:var(--text-muted); margin-bottom:20px;">Examine Security and System event logs to track user logon activity and service execution.</p>
+                <h2>Phase 5: Timeline Reconstruction</h2>
+                <p style="color:var(--text-muted); margin-bottom:20px;">Correlate artifacts from all phases to reconstruct the sequence of events. Identify which activity directly preceded the USB device connection.</p>
                 <div id="q-container-5"></div>
-            </section>
-
-            <section id="phase-6" class="view-section">
-                <h2>Phase 6: Timeline Reconstruction (Questions)</h2>
-                <p style="color:var(--text-muted); margin-bottom:20px;">Answer crucial timing questions based on your investigation to establish the sequence of events.</p>
-                <div id="q-container-6"></div>
             </section>
 
             <section id="timeline-builder" class="view-section">
@@ -1550,8 +1542,8 @@ const EVENT_LOGS_DRIVE_LINK = "https://blucloudsoftech-my.sharepoint.com/:f:/g/p
 
 // GLOBAL CONFIGURATION
 const FALCON_CONFIG = {
-    autoResetOnLaunch: false,       // Set to true to enable Training Mode (auto resets localStorage on load)
-    persistSessions: true,          // Set to true to allow sessions to persist normally
+    autoResetOnLaunch: false,       // Deprecated — session persistence now managed via sessionStorage token
+    persistSessions: true,          // Kept for compatibility — session scope controlled by SESSION_TOKEN strategy
     integrityMonitoring: false,     // Anti-cheat disabled globally by default
     autoSubmitOnViolation: false,
     devToolsDetection: false,
@@ -1575,27 +1567,26 @@ const QUESTION_BANK = {
         { id: "q5", text: "Review the contents of the documents stored within the Falcon project directory. Which Microsoft Word document contains confidential project bidding information?", answer: "Project_Falcon_Bid_2027.docx", points: 5, hints: ["Not all documents are equally sensitive. Examine document contents rather than relying solely on filenames.", "Open the Word documents within the Falcon directory using Autopsy's file viewer or export the file for review."] },
         { id: "q6", text: "What is the full directory path of the spreadsheet containing acquisition target information?", answer: "C:\\Projects\\Falcon\\Acquisition_Targets_2026.xlsx", points: 5, hints: ["Review the project folders stored under the Projects directory.", "Use the File Views section in Autopsy or examine the directory structure using FTK Imager."] },
         { id: "q7", text: "What is the name of the confidential project file found in the staging directory? (Include extension)", answer: "SourceCode.zip", points: 5, hints: ["Check the staging directory for archived files.", "Look for .zip extensions in the Falcon project folder."] },
-        { id: "q8", text: "When was the confidential project file (SourceCode.zip) created in the staging directory? (Format: YYYY-MM-DD HH:MM:SS IST)", answer: "2026-06-10 12:44:54 IST", points: 5, hints: ["Review file creation times in the staging area using Autopsy.", "Convert UTC timestamps to IST (+5:30)."] },
+        { id: "q8", text: "At what date and time (IST) was the confidential project file deleted from the system? (Format: YYYY-MM-DD HH:MM:SS IST)", answer: "2026-06-10 12:44:54 IST", points: 5, hints: ["Review artifacts associated with deleted files rather than active files.", "Examine Recycle Bin metadata or deleted file artifacts within Autopsy."] },
         { id: "q9", type: "mcq", text: "Which artifact can provide evidence that the deleted file was previously accessed by the user?", options: ["A. USBSTOR", "B. LNK File", "C. Security Event ID 4624", "D. SAM Hive"], answer: "B. LNK File", points: 5, hints: ["Consider artifacts created when files are opened through Windows Explorer.", "Examine shortcut-based artifacts generated by Windows."] },
         { id: "q10", text: "Which web browser was primarily used by the suspect?", answer: "Chrome", aliases: ["chrome", "google chrome", "GOOGLE CHROME"], points: 5, hints: ["Look in the AppData\\Local folder for browser profile directories.", "The browser stores its history in an SQLite database file named \'History\'."] }
     ],
     browser: [
         { id: "q11", text: "What cloud storage domain was accessed to upload the files?", answer: "Dropbox", aliases: ["dropbox", "dropbox.com", "www.dropbox.com"], points: 5, hints: ["Check browser history for cloud storage domains.", "Look for popular file hosting and sharing services."] },
         { id: "q12", text: "What search term did the user query immediately before clearing their browser history?", answer: "how to permanently delete files", points: 5, hints: ["They were looking for anti-forensic techniques.", "Starts with 'how to permanently...'"] },
-        { id: "q13", text: "At what date and time (IST) was PuTTY downloaded?", answer: "2026-06-10 14:10:44 IST", points: 5, hints: ["Check the browser downloads database.", "Ensure you format it correctly as requested."] },
-        { id: "q14", text: "What software was downloaded by the user shortly before USB activity occurred?", answer: "PuTTY", points: 5, hints: ["Check the browser downloads history.", "It's a popular SSH and telnet client."] },
-        { id: "q15", type: "mcq", text: "Was a removable USB storage device connected to the workstation during the investigation period?", options: ["A. Yes", "B. No", "C. Unable to Determine", "D. Evidence Corrupted"], answer: "A. Yes", points: 5, hints: ["Check the SYSTEM registry hive.", "Look for USBSTOR entries in Registry Explorer."] }
+        { id: "q13", text: "At what date and time (IST) was PuTTY downloaded?", answer: "2026-06-10 14:10:44 IST", points: 5, hints: ["Check the browser downloads database.", "Ensure you format it correctly as requested."] }
     ],
     registry: [
-        { id: "q16", text: "What is the Vendor Name of the unauthorized USB device connected to the system?", answer: "SanDisk Corp.", points: 5, hints: ["Look in the SYSTEM registry hive under USBSTOR.", "It's a major flash drive manufacturer."] },
-        { id: "q17", text: "What is the Product Name of the unauthorized USB device?", answer: "Cruzer Blade", points: 5, hints: ["Check the device parameters in the registry.", "It's a specific SanDisk model."] },
-        { id: "q18", text: "What is the Serial Number of the USB device?", answer: "4C530001260815113285", points: 5, hints: ["Found in the USBSTOR registry key after the '&' symbol.", "Length is 20 characters."] }
-    ],
-    eventlogs: [
+        { id: "q15", type: "mcq", text: "Was a removable USB storage device connected to the workstation during the investigation period?", options: ["A. Yes", "B. No", "C. Unable to Determine", "D. Evidence Corrupted"], answer: "A. Yes", points: 5, hints: ["Check the SYSTEM registry hive.", "Look for USBSTOR entries in Registry Explorer."] },
+        { id: "q16", text: "What is the Manufacturer of the unauthorized USB device connected to the system?", answer: "SanDisk Corp.", points: 5, hints: ["Look in the SYSTEM registry hive under USBSTOR.", "It's a major flash drive manufacturer."] },
+        { id: "q17", text: "What is the Model Name of the unauthorized USB device?", answer: "Cruzer Blade", points: 5, hints: ["Check the device parameters in the registry.", "It's a specific SanDisk model name."] },
+        { id: "q18", text: "What is the Serial Number of the USB device?", answer: "4C530001260815113285", points: 5, hints: ["Found in the USBSTOR registry key after the '&' symbol.", "Length is 20 characters."] },
+        { id: "q14", text: "What software was downloaded immediately prior to the USB device connection event?", answer: "PuTTY", points: 5, hints: ["Review browser download activity and compare download timestamps with USB activity.", "Use Autopsy Browser Downloads or browser history artifacts and correlate timestamps with USB connection artifacts."] },
         { id: "q19", text: "At what date and time (IST) did the USB device connection occur?", answer: "2026-06-10 14:53:00 IST", points: 5, hints: ["Check registry first install dates or Event logs.", "Ensure you format the answer with IST suffix."] }
     ],
+    eventlogs: [],
     timeline: [
-        { id: "q20", text: "At what time (UTC) was the system shut down? (Format: YYYY-MM-DD HH:MM:SS)", answer: "2026-06-08 03:05:00", points: 5, hints: ["System Event ID 6006.", "Check the System.evtx log in Event Viewer."] }
+        { id: "q20", type: "mcq", text: "Which of the following events occurred immediately before the USB device connection?", options: ["A. Chrome Installation", "B. LibreOffice Download", "C. PuTTY Download", "D. User Logoff"], answer: "C. PuTTY Download", points: 5, hints: ["Review the timeline of user activity leading up to the USB connection.", "Compare browser download timestamps with the USB connection timestamp and identify the closest event."] }
     ]
 };
 
@@ -1627,32 +1618,59 @@ let AppState = {
 };
 
 const STORAGE_KEY = "FALCON_DFIR_STATE";
+const SESSION_TOKEN_KEY = "FALCON_SESSION_TOKEN";
 
+// ── saveState ────────────────────────────────────────────────────
+// Persists AppState to localStorage and keeps the session token alive
+// in sessionStorage. Token exists only while the tab is open.
 function saveState() {
-    // After submission, still allow notes/timeline saves but skip scoring updates
-    if (FALCON_CONFIG.persistSessions || !FALCON_CONFIG.autoResetOnLaunch) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(AppState));
-    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(AppState));
     if (!AppState.submitted) {
         UI.updateDashboard();
     }
 }
 
+// ── loadState ────────────────────────────────────────────────────
+// SESSION TOKEN STRATEGY:
+//   sessionStorage token present  → same tab, restore session
+//   sessionStorage token absent   → new page load, always start fresh
+//
+// sessionStorage is cleared automatically when:
+//   - The tab is closed
+//   - The browser is closed
+//   - A new navigation (address bar, bookmark, link from another page)
+//   - Reset Session button (explicitly clears it)
+//
+// sessionStorage is NOT cleared on:
+//   - F5 / Ctrl+R reload within the same tab
+//   This is intentional — preserves session during accidental reload.
 function loadState() {
-    if (FALCON_CONFIG.autoResetOnLaunch) {
-        localStorage.removeItem("falcon_state");
+    const sessionToken = sessionStorage.getItem(SESSION_TOKEN_KEY);
+
+    if (!sessionToken) {
+        // No token → fresh load. Wipe any stale localStorage data and
+        // show the login screen. Do NOT restore previous session.
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem("falcon_state");
+        return; // AppState stays at defaults — login screen will show
     }
 
-    if (FALCON_CONFIG.persistSessions || !FALCON_CONFIG.autoResetOnLaunch) {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
+    // Token present → same tab is still open, restore the session
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            // Validate token matches (prevents cross-tab bleed)
+            if (parsed._sessionToken && parsed._sessionToken === sessionToken) {
                 AppState = { ...AppState, ...parsed };
-            } catch(e) {
-                console.error("State parse error");
+            } else {
+                // Token mismatch — clear and start fresh
+                localStorage.removeItem(STORAGE_KEY);
+                sessionStorage.removeItem(SESSION_TOKEN_KEY);
             }
+        } catch(e) {
+            console.error("State parse error — starting fresh");
+            localStorage.removeItem(STORAGE_KEY);
         }
     }
 }
@@ -1692,8 +1710,11 @@ const SessionEngine = {
         document.getElementById('reset-modal').style.display = 'flex';
     },
     resetSession: () => {
+        // Clear both storages so the session token is gone.
+        // Next load will have no token → login screen shown fresh.
         localStorage.removeItem("falcon_state");
         localStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem(SESSION_TOKEN_KEY);
         location.reload();
     }
 };
@@ -1733,16 +1754,27 @@ const LoginEngine = {
         
         saveState();
         
+        // Generate session token — ties this browser tab to this session
+        const token = Math.random().toString(36).substr(2) + Date.now().toString(36);
+        AppState._sessionToken = token;
+        sessionStorage.setItem(SESSION_TOKEN_KEY, token);
+
+        saveState();
+
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('app-container').style.display = 'flex';
         UI.init();
     },
     checkAuth: () => {
+        // checkAuth is called on every load AFTER loadState().
+        // If loadState() found no session token, AppState fields are empty
+        // and login screen stays visible. If token was valid, restore session.
         if(AppState.investigatorName && AppState.teamName && AppState.department) {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-container').style.display = 'flex';
             UI.init();
         }
+        // else: login screen remains visible (default state)
     }
 };
 
@@ -1812,7 +1844,7 @@ const UI = {
 
         // Render Questions by Phase
         const phaseMapping = {
-            acquisition: 1, filesystem: 2, browser: 3, registry: 4, eventlogs: 5, timeline: 6
+            acquisition: 1, filesystem: 2, browser: 3, registry: 4, eventlogs: 0, timeline: 5
         };
 
         const _qOffsets = {};
@@ -1970,7 +2002,7 @@ const UI = {
         document.getElementById('submit-warn-display').innerText = AppState.warnings;
 
         // Phase Badges
-        const phaseMapping = { acquisition: 1, filesystem: 2, browser: 3, registry: 4, eventlogs: 5, timeline: 6 };
+        const phaseMapping = { acquisition: 1, filesystem: 2, browser: 3, registry: 4, eventlogs: 0, timeline: 5 };
         
         Object.keys(QUESTION_BANK).forEach(phaseKey => {
             const phaseNum = phaseMapping[phaseKey];
