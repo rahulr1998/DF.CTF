@@ -827,68 +827,7 @@ tr:hover td {
     color: var(--success);
 }
 
-/* Timeline */
-.timeline-container {
-    position: relative;
-    padding: 20px 0;
-}
-
-.timeline-container::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 40px;
-    width: 2px;
-    background: var(--border-color);
-}
-
-.timeline-event {
-    position: relative;
-    margin-bottom: 20px;
-    padding-left: 80px;
-}
-
-.timeline-marker {
-    position: absolute;
-    left: 35px;
-    top: 0;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--accent);
-    border: 2px solid var(--bg-main);
-}
-
-.timeline-content {
-    background: var(--bg-panel);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    padding: 15px;
-}
-
-.timeline-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text-muted);
-}
-
-.timeline-desc {
-    color: var(--text-main);
-}
-
-.timeline-artifact {
-    margin-top: 10px;
-    font-size: 11px;
-    color: var(--accent);
-    background: rgba(88, 166, 255, 0.1);
-    padding: 4px 8px;
-    border-radius: 4px;
-    display: inline-block;
-}
+/* Timeline Builder removed — v7 */
 
 .delete-event {
     color: var(--danger);
@@ -1069,9 +1008,7 @@ tr:hover td {
             </div>
             
             <div class="nav-section-title">Reporting</div>
-            <div class="nav-item" data-target="timeline-builder">
-                <span class="icon">📅</span> Timeline Builder
-            </div>
+
             <div class="nav-item" data-target="investigator-notes">
                 <span class="icon">📝</span> Investigator Notes
             </div>
@@ -1182,7 +1119,7 @@ tr:hover td {
                             <li>Identify the primary user and suspicious files.</li>
                             <li>Analyze Registry and Event Logs for USB insertion activity.</li>
                             <li>Analyze browser artifacts for cloud exfiltration evidence.</li>
-                            <li>Build a chronological timeline of the incident.</li>
+
                             <li>Draft a professional Final Report.</li>
                         </ul>
                         
@@ -1299,51 +1236,7 @@ tr:hover td {
                 <div id="q-container-5"></div>
             </section>
 
-            <section id="timeline-builder" class="view-section">
-                <h2>Timeline Builder</h2>
-                <p style="color:var(--text-muted); margin-bottom:20px;">Construct a chronological timeline of the incident. This will be included in your final report.</p>
-                
-                <div class="card" style="margin-bottom: 20px;">
-                    <h3 class="card-title" style="color:var(--accent);">How to Build the Timeline</h3>
-                    <p style="margin-bottom:10px; color:var(--text-main);">The timeline should reconstruct the user's activities in chronological order using forensic evidence.</p>
-                    <p style="margin-bottom:5px; color:var(--text-muted);">For each event:</p>
-                    <ul style="margin-left:20px; margin-bottom:15px; color:var(--text-muted);">
-                        <li>Identify the timestamp.</li>
-                        <li>Describe the activity.</li>
-                        <li>Cite the supporting artifact.</li>
-                    </ul>
-                    <div style="background:var(--bg-input); border:1px solid var(--border-color); padding:15px; border-radius:var(--border-radius); font-family:var(--font-mono); font-size:12px; margin-bottom:15px;">
-                        <span style="color:var(--text-muted);">Example:</span><br>
-                        <span style="color:var(--success);">[2026-06-10 14:06:01 IST]</span> User searched for a cloud storage service. <span style="color:var(--accent);">Source: Browser History</span><br>
-                        <span style="color:var(--success);">[2026-06-10 14:10:44 IST]</span> PuTTY downloaded. <span style="color:var(--accent);">Source: Chrome Downloads</span><br>
-                        <span style="color:var(--success);">[2026-06-10 14:53:00 IST]</span> USB device connected. <span style="color:var(--accent);">Source: USBSTOR</span>
-                    </div>
-                    <p style="color:var(--warning); font-size:12px; font-weight:bold;">Students must provide at least five significant events.</p>
-                </div>
 
-                <div class="card">
-                    <div style="display:flex; gap:15px; margin-bottom:15px;">
-                        <div style="flex:1;">
-                            <label>Timestamp (UTC)</label>
-                            <input type="text" id="tl-time" placeholder="YYYY-MM-DD HH:MM:SS">
-                        </div>
-                        <div style="flex:2;">
-                            <label>Event Description</label>
-                            <input type="text" id="tl-desc" placeholder="e.g., User logged into WIN-FALCON01">
-                        </div>
-                        <div style="flex:1;">
-                            <label>Artifact Source</label>
-                            <input type="text" id="tl-artifact" placeholder="e.g., Security.evtx (4624)">
-                        </div>
-                        <div style="display:flex; align-items:flex-end;">
-                            <button class="btn btn-primary" onclick="TimelineEngine.addEvent()">Add Event</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="timeline-container" id="timeline-display">
-                    </div>
-            </section>
 
             <section id="investigator-notes" class="view-section">
                 <h2>Investigator Notes</h2>
@@ -1422,7 +1315,7 @@ tr:hover td {
                     <h2 style="font-size:24px; color:var(--accent);">Ready to Submit?</h2>
                     <p style="margin:20px 0; color:var(--text-muted); max-width:600px; margin-left:auto; margin-right:auto;">
                         By submitting this investigation, you finalize your score and generate the incident report webhook. 
-                        Ensure all questions are answered, timeline events are documented, and the Final Report section is complete.
+                        Ensure all questions are answered and the Final Report section is complete.
                     </p>
                     
                     <div style="display:flex; justify-content:center; gap:30px; margin:30px 0;">
@@ -1465,7 +1358,6 @@ tr:hover td {
                 <li>Team Information</li>
                 <li>Answers</li>
                 <li>Notes</li>
-                <li>Timeline</li>
                 <li>Report</li>
                 <li>Progress & Scores</li>
                 <li>Warnings</li>
@@ -1558,7 +1450,7 @@ const TOTAL_QUESTIONS = 20;
 // THE QUESTION BANK (Separated by Phase, precisely 20 questions total)
 const QUESTION_BANK = {
     acquisition: [
-        { id: "q1", text: "What is the MD5 hash of the workstation image (WIN-FALCON01.E01)?", answer: "8f4e33f3dc3e414ff94e5fb6905cba8c", points: 5, hints: ["Check the Evidence Locker.", "Look at the meta-data under the disk icon."] },
+        { id: "q1", text: "What is the MD5 hash of the workstation image (WIN-FALCON01.E01)?", answer: "8f4e33f3dc3e414ff94e5fb6905cba8c", points: 5, hints: ["Review the acquisition documentation and compare it with values generated during image verification.", "Use FTK Imager's Verify Image feature and compare the resulting MD5 value with the acquisition record associated with the evidence."] },
         { id: "q2", text: "What is the operating system version running on the image? (Format: Windows XX)", answer: "Windows 10", points: 5, hints: ["It's a modern Microsoft OS.", "Not 11, the one before it."] },
         { id: "q3", text: "What is the Hostname of the system?", answer: "WIN-FALCON01", points: 5, hints: ["Read the Case Brief carefully.", "Check the scenario description."] },
         { id: "q4", text: "Investigators identified several department folders under C:\\Projects. Which folder contains the confidential Project Falcon documents?", answer: "C:\\Projects\\Falcon", points: 5, hints: ["Check the root of the C: drive.", "Examine the directory structure using FTK Imager."] }
@@ -1567,13 +1459,13 @@ const QUESTION_BANK = {
         { id: "q5", text: "Review the contents of the documents stored within the Falcon project directory. Which Microsoft Word document contains confidential project bidding information?", answer: "Project_Falcon_Bid_2027.docx", points: 5, hints: ["Not all documents are equally sensitive. Examine document contents rather than relying solely on filenames.", "Open the Word documents within the Falcon directory using Autopsy's file viewer or export the file for review."] },
         { id: "q6", text: "What is the full directory path of the spreadsheet containing acquisition target information?", answer: "C:\\Projects\\Falcon\\Acquisition_Targets_2026.xlsx", points: 5, hints: ["Review the project folders stored under the Projects directory.", "Use the File Views section in Autopsy or examine the directory structure using FTK Imager."] },
         { id: "q7", text: "What is the name of the confidential project file found in the staging directory? (Include extension)", answer: "SourceCode.zip", points: 5, hints: ["Check the staging directory for archived files.", "Look for .zip extensions in the Falcon project folder."] },
-        { id: "q8", text: "At what date and time (IST) was the confidential project file deleted from the system? (Format: YYYY-MM-DD HH:MM:SS IST)", answer: "2026-06-10 12:44:54 IST", points: 5, hints: ["Review artifacts associated with deleted files rather than active files.", "Examine Recycle Bin metadata or deleted file artifacts within Autopsy."] },
+        { id: "q8", text: "At what date and time (IST) was the confidential project file (SourceCode.zip) deleted from the system? (Format: YYYY-MM-DD HH:MM:SS IST)", answer: "2026-06-10 12:44:54 IST", points: 5, hints: ["Review artifacts associated with deleted files rather than active files.", "Examine Recycle Bin metadata or deleted file artifacts within Autopsy."] },
         { id: "q9", type: "mcq", text: "Which artifact can provide evidence that the deleted file was previously accessed by the user?", options: ["A. USBSTOR", "B. LNK File", "C. Security Event ID 4624", "D. SAM Hive"], answer: "B. LNK File", points: 5, hints: ["Consider artifacts created when files are opened through Windows Explorer.", "Examine shortcut-based artifacts generated by Windows."] },
         { id: "q10", text: "Which web browser was primarily used by the suspect?", answer: "Chrome", aliases: ["chrome", "google chrome", "GOOGLE CHROME"], points: 5, hints: ["Look in the AppData\\Local folder for browser profile directories.", "The browser stores its history in an SQLite database file named \'History\'."] }
     ],
     browser: [
         { id: "q11", text: "What cloud storage domain was accessed to upload the files?", answer: "Dropbox", aliases: ["dropbox", "dropbox.com", "www.dropbox.com"], points: 5, hints: ["Check browser history for cloud storage domains.", "Look for popular file hosting and sharing services."] },
-        { id: "q12", text: "What search term did the user query immediately before clearing their browser history?", answer: "how to permanently delete files", points: 5, hints: ["They were looking for anti-forensic techniques.", "Starts with 'how to permanently...'"] },
+        { id: "q12", text: "What search term did the user query immediately before clearing their browser history?", answer: "how to permanently delete files", points: 5, hints: ["Review the final browsing activity that occurred before the browser cleanup event.", "Sort browser history entries chronologically and identify the last search query performed prior to the history-clearing activity."] },
         { id: "q13", text: "At what date and time (IST) was PuTTY downloaded?", answer: "2026-06-10 14:10:44 IST", points: 5, hints: ["Check the browser downloads database.", "Ensure you format it correctly as requested."] }
     ],
     registry: [
@@ -1609,7 +1501,6 @@ let AppState = {
     downloadedArtifacts: [], 
     warnings: 0,
     violationLog: [],
-    timeline: [],      
     notes: [],         
     report: {
         exec: "", scope: "", findings: "", conclusion: "", recs: ""
@@ -1957,7 +1848,6 @@ const UI = {
 
         ArtifactEngine.render();
         NotesEngine.render();
-        TimelineEngine.render();
         UI.updateDashboard();
         
         if (AppState.submitted) {
@@ -2143,59 +2033,7 @@ const NotesEngine = {
     }
 };
 
-const TimelineEngine = {
-    addEvent: () => {
-        const time = document.getElementById('tl-time').value.trim();
-        const desc = document.getElementById('tl-desc').value.trim();
-        const art = document.getElementById('tl-artifact').value.trim();
-        
-        if(!time || !desc) {
-            Util.notify("Time and Description are required.", "danger");
-            return;
-        }
-
-        AppState.timeline.push({
-            id: Util.generateId(),
-            time: time,
-            desc: desc,
-            artifact: art || "Analyst Observation"
-        });
-
-        // Sort timeline chronologically
-        AppState.timeline.sort((a,b) => a.time.localeCompare(b.time));
-
-        document.getElementById('tl-time').value = '';
-        document.getElementById('tl-desc').value = '';
-        document.getElementById('tl-artifact').value = '';
-        saveState();
-        TimelineEngine.render();
-        Util.notify("Timeline event added.", "success");
-    },
-    deleteEvent: (id) => {
-        AppState.timeline = AppState.timeline.filter(t => t.id !== id);
-        saveState();
-        TimelineEngine.render();
-    },
-    render: () => {
-        const cont = document.getElementById('timeline-display');
-        cont.innerHTML = '';
-        AppState.timeline.forEach(t => {
-            cont.innerHTML += `
-                <div class="timeline-event">
-                    <div class="timeline-marker"></div>
-                    <div class="timeline-content">
-                        <div class="timeline-header">
-                            <span>${Util.escapeHTML(t.time)}</span>
-                            <span class="delete-event" onclick="TimelineEngine.deleteEvent('${t.id}')">Delete</span>
-                        </div>
-                        <div class="timeline-desc">${Util.escapeHTML(t.desc)}</div>
-                        <div class="timeline-artifact">${Util.escapeHTML(t.artifact)}</div>
-                    </div>
-                </div>
-            `;
-        });
-    }
-};
+/* TimelineEngine removed — v7 */
 
 const ReportEngine = {
     save: () => {
@@ -2320,7 +2158,6 @@ const SubmissionEngine = {
                     { name: "Final Score", value: statScore, inline: true },
                     { name: "Completion", value: statProgress, inline: true },
                     { name: "Hint Usage", value: `${hintsCount} hints used (-${hintPenaltyTotal} pts)`, inline: true },
-                    { name: "Timeline Events Count", value: AppState.timeline.length.toString() + " events", inline: true },
                     { name: "Integrity Warnings", value: AppState.warnings.toString(), inline: true },
                     { name: "Executive Summary", value: AppState.report.exec ? AppState.report.exec.substring(0, 1000) : "Not provided", inline: false },
                     { name: "Final Findings", value: AppState.report.findings ? AppState.report.findings.substring(0, 1000) : "Not provided", inline: false }
